@@ -30,7 +30,12 @@ const AGENT_GATEWAY_CONFIG = Object.freeze({
     "updatePromptContent",
     "getPromptHistory",
     "exportPrompts",
-    "importPrompts"
+    "importPrompts",
+    "ratePrompt",
+    "recordPromptUsage",
+    "getTopRatedPrompts",
+    "getMostUsedPrompts",
+    "getRecentlyUsedPrompts"
   ]
 });
 
@@ -128,7 +133,12 @@ function dispatchAgentAction_(action, payload) {
     ),
     getPromptHistory: () => getPromptHistory(requiredValue_(payload.promptId, "promptId")),
     exportPrompts: () => exportPromptsToJson(payload.includeArchived === true),
-    importPrompts: () => importPromptsFromJson(requiredValue_(payload.jsonString, "jsonString"))
+    importPrompts: () => importPromptsFromJson(requiredValue_(payload.jsonString, "jsonString")),
+    ratePrompt: () => ratePrompt(requiredValue_(payload.promptId, "promptId"), requiredValue_(payload.rating, "rating")),
+    recordPromptUsage: () => recordPromptUsage(requiredValue_(payload.promptId, "promptId")),
+    getTopRatedPrompts: () => getTopRatedPrompts(payload.limit),
+    getMostUsedPrompts: () => getMostUsedPrompts(payload.limit),
+    getRecentlyUsedPrompts: () => getRecentlyUsedPrompts(payload.limit)
   };
 
   const handler = actionMap[action];

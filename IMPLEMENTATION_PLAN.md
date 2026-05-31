@@ -122,6 +122,22 @@
   - `11_prompt_library_web_app_agent_gateway.gs` — פעולות `exportPrompts`, `importPrompts` ב-API
 - **הגיון עיצובי:** export מייצר snapshot ניתן לייבוא בחזרה; שדות ID ו-Doc Link נמחקים בייצוא כך שבייבוא יווצרו IDs חדשים ו-Docs חדשים
 - **בדיקות תחביר:** PASS על 3 קבצים
+- **commit:** `6b6ed53`
+- **סטטוס:** ✅ הושלם
+
+#### ✅ DONE-008 — דירוג והיסטוריית שימוש (TODO-006)
+- **מה:** שדות Rating (1–5), Use_Count, Last_Used_At + פונקציות ניהול.
+- **קבצים שהשתנו:**
+  - `01_prompt_library_schema_config.gs` — 3 עמודות חדשות בסכמת Prompts: `Rating`, `Use_Count`, `Last_Used_At`
+  - `04_prompt_library_prompt_service.gs` — 5 פונקציות חדשות:
+    - `ratePrompt(promptId, rating)` — דירוג 1–5 עם ולידציה
+    - `recordPromptUsage(promptId)` — מגדיל Use_Count ומעדכן Last_Used_At
+    - `getTopRatedPrompts(limit)` — מחזיר N פרומפטים מדורגים הגבוה ביותר
+    - `getMostUsedPrompts(limit)` — מחזיר N פרומפטים ששימשו הכי הרבה
+    - `getRecentlyUsedPrompts(limit)` — מחזיר N פרומפטים ששימשו לאחרונה
+  - `normalizePromptData_` עודכן — כולל Rating, Use_Count, Last_Used_At
+  - `11_prompt_library_web_app_agent_gateway.gs` — 5 פעולות API חדשות
+- **בדיקות תחביר:** PASS על 3 קבצים
 - **commit:** (commit הנוכחי)
 
 ---
@@ -196,8 +212,9 @@
 
 #### ✅ TODO-005 — ייבוא/ייצוא ← **הושלם ב-DONE-007**
 
-#### ⏳ TODO-006 — דירוג והיסטוריית שימוש
-- **מה:** דירוג 1–5, שדה `Last_Used`, מונה `Use_Count`
+#### ✅ TODO-006 — דירוג והיסטוריית שימוש ← **הושלם ב-DONE-008**
+
+#### ✅ TODO-006 — דירוג והיסטוריית שימוש ← **הושלם ב-DONE-008**
 
 ---
 

@@ -139,6 +139,46 @@ function archivePrompt(promptId) {
   return updatePromptRecord(promptId, { Status: "Archived" });
 }
 
+// ─── Rating & Usage Tracking ───────────────────────────────────────────────
+
+function ratePrompt(promptId, rating) {
+  var r = Number(rating);
+  if (isNaN(r) || r < 1 || r > 5) throw new Error("Rating must be a number between 1 and 5");
+  var result = updatePromptRecord(promptId, { Rating: r });
+  logAction("RATE_PROMPT", "Prompt", promptId, "Success", "Rated: " + r);
+  return result;
+}
+
+function recordPromptUsage(promptId) {
+  var record = getPromptRecordById(promptId);
+  if (!record) throw new Error("Prompt not found: " + promptId);
+  var currentCount = Number(record.Use_Count) || 0;
+  var result = updatePromptRecord(promptId, { Use_Count: currentCount + 1, Last_Used_At: new Date() });
+  logAction("RECORD_PROMPT_USAGE", "Prompt", promptId, "Success", "Use count: " + (currentCount + 1));
+  return result;
+}
+
+function getTopRatedPrompts(limit) {
+  var n = Number(limit) || 10;
+  return findPromptRecords("").filter(function(r) { return Number(r.Rating) > 0; })
+    .sort(function(a, b) { return Number(b.Rating) - Number(a.Rating); })
+    .slice(0, n);
+}
+
+function getMostUsedPrompts(limit) {
+  var n = Number(limit) || 10;
+  return findPromptRecords("").filter(function(r) { return Number(r.Use_Count) > 0; })
+    .sort(function(a, b) { return Number(b.Use_Count) - Number(a.Use_Count); })
+    .slice(0, n);
+}
+
+function getRecentlyUsedPrompts(limit) {
+  var n = Number(limit) || 10;
+  return findPromptRecords("").filter(function(r) { return r.Last_Used_At && String(r.Last_Used_At).trim() !== ""; })
+    .sort(function(a, b) { return new Date(b.Last_Used_At) - new Date(a.Last_Used_At); })
+    .slice(0, n);
+}
+
 // ─── Export / Import ───────────────────────────────────────────────────────
 
 function exportPromptsToJson(includeArchived) {
@@ -294,7 +334,10 @@ function normalizePromptData_(promptData) {
     Updated_At: promptData.Updated_At || now,
     Source: String(promptData.Source || "").trim(),
     Notes: String(promptData.Notes || "").trim(),
-    Variables: serializeVariables_(promptData.Variables)
+    Variables: serializeVariables_(promptData.Variables),
+    Rating: promptData.Rating ? Number(promptData.Rating) : "",
+    Use_Count: Number(promptData.Use_Count) || 0,
+    Last_Used_At: promptData.Last_Used_At || ""
   };
 }
 
