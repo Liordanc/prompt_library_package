@@ -57,7 +57,8 @@ const PROMPT_LIBRARY_SCHEMA = Object.freeze({
         { key: "Created_At", label: "Created_At", type: "DateTime", required: true, unique: false, editable: false, defaultValue: "{{now}}" },
         { key: "Updated_At", label: "Updated_At", type: "DateTime", required: true, unique: false, editable: false, defaultValue: "{{now}}" },
         { key: "Source", label: "Source", type: "Text", required: false, unique: false, editable: true, defaultValue: null },
-        { key: "Notes", label: "Notes", type: "LongText", required: false, unique: false, editable: true, defaultValue: null }
+        { key: "Notes", label: "Notes", type: "LongText", required: false, unique: false, editable: true, defaultValue: null },
+        { key: "Variables", label: "Variables", type: "LongText", required: false, unique: false, editable: true, defaultValue: null }
       ]
     },
     {

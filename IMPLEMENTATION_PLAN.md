@@ -11,7 +11,7 @@
 | תשתית בסיסית | ✅ הושלם |
 | תיעוד ועקרונות עבודה | ✅ הושלם |
 | פריסה לסביבה אמיתית | ⏳ ממתין |
-| מערכת תבניות עם משתנים | ⏳ ממתין |
+| מערכת תבניות עם משתנים | ✅ הושלם |
 | גרסאות (Versioning) | ⏳ ממתין |
 | UI Sidebar | ⏳ ממתין |
 | ייבוא/ייצוא | ⏳ ממתין |
@@ -41,8 +41,31 @@
 
 #### ✅ DONE-003 — יצירת IMPLEMENTATION_PLAN.md
 - **מה:** קובץ זה. מסמך מרכזי למעקב משימות, לוג פעולות, ותכנון הפיתוח.
-- **commit:** (commit הנוכחי)
+- **commit:** `6420e84`
 - **סטטוס:** ✅ הושלם
+
+#### ✅ DONE-004 — מערכת תבניות עם משתנים (TODO-002)
+- **מה:** מימוש מלא של מערכת תבניות עם סינטקס `{{variable}}`.
+- **קבצים שהשתנו:**
+  - `01_prompt_library_schema_config.gs` — הוספת עמודה `Variables` (LongText, JSON array) לסכמת Prompts
+  - `04_prompt_library_prompt_service.gs` — הוספת 8 פונקציות חדשות:
+    - `fillTemplate(promptId, valuesMap)` — ציבורי, ממלא משתנים ומחזיר טקסט מוכן
+    - `getTemplateVariables(promptId)` — ציבורי, מחזיר מידע על משתנים בפרומפט
+    - `getPromptFullText_(promptId)` — פנימי, קורא את הטקסט המלא מ-Google Doc
+    - `extractVariables_(text)` — פנימי, מחלץ `{{var}}` מטקסט (ללא כפילויות)
+    - `validateTemplateVariables_(promptData)` — פנימי, מוודא שכל משתני הטקסט מוגדרים
+    - `parseVariables_(value)` — פנימי, מפרסר JSON של Variables
+    - `serializeVariables_(variables)` — פנימי, ממיר מערך ל-JSON string
+    - `escapeRegex_(str)` — פנימי, מגן מתווים מיוחדים ב-regex
+  - `normalizePromptData_()` עודכן — כולל `Variables` בנורמליזציה
+  - `08_prompt_library_test_runner.gs` — הוספת `runPromptLibraryTemplateTest()` עם 11 בדיקות:
+    - 7 בדיקות unit (פונקציות פנימיות, ללא GAS)
+    - 4 בדיקות אינטגרציה (addPrompt → getTemplateVariables → fillTemplate → שגיאה על משתנה חסר)
+  - `runPromptLibraryFullTestSuite()` עודכן — כולל את חבילת הבדיקות החדשה
+  - `11_prompt_library_web_app_agent_gateway.gs` — הוספת 2 פעולות ל-API: `fillTemplate`, `getTemplateVariables`
+- **בדיקות תחביר:** PASS על כל 4 הקבצים (`node --check`)
+- **בדיקות GAS:** ממתינות לפריסה בסביבה אמיתית (TODO-001)
+- **commit:** (commit הנוכחי)
 
 ---
 
@@ -69,7 +92,7 @@
 
 ### 🟠 עדיפות גבוהה
 
-#### ⏳ TODO-002 — מערכת תבניות עם משתנים
+#### ✅ TODO-002 — מערכת תבניות עם משתנים ← **הושלם ב-DONE-004**
 - **מה צריך לעשות:**
   1. **שינוי סכמה** ב-`01_prompt_library_schema_config.gs`:
      - הוסף עמודה `Variables` (JSON array של `{name, description, default}`)

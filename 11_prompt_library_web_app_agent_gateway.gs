@@ -24,7 +24,9 @@ const AGENT_GATEWAY_CONFIG = Object.freeze({
     "unmarkFavorite",
     "toggleFavorite",
     "archivePrompt",
-    "validatePrompt"
+    "validatePrompt",
+    "fillTemplate",
+    "getTemplateVariables"
   ]
 });
 
@@ -109,7 +111,12 @@ function dispatchAgentAction_(action, payload) {
     unmarkFavorite: () => unmarkPromptFavorite(requiredValue_(payload.promptId, "promptId")),
     toggleFavorite: () => togglePromptFavorite(requiredValue_(payload.promptId, "promptId")),
     archivePrompt: () => archivePrompt(requiredValue_(payload.promptId, "promptId")),
-    validatePrompt: () => validatePromptRecord(requiredValue_(payload.promptId, "promptId"))
+    validatePrompt: () => validatePromptRecord(requiredValue_(payload.promptId, "promptId")),
+    fillTemplate: () => fillTemplate(
+      requiredValue_(payload.promptId, "promptId"),
+      requiredValue_(payload.variables, "variables")
+    ),
+    getTemplateVariables: () => getTemplateVariables(requiredValue_(payload.promptId, "promptId"))
   };
 
   const handler = actionMap[action];

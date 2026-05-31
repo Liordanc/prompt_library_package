@@ -85,6 +85,115 @@ function runPromptLibraryMigrationInspectionTest() {
   return buildTestSummary_("runPromptLibraryMigrationInspectionTest", results);
 }
 
+function runPromptLibraryTemplateTest() {
+  const results = [];
+
+  results.push(runTest_("extractVariables_basic", () => {
+    const vars = extractVariables_("Hello {{name}}, you are {{age}} years old.");
+    if (vars.length !== 2 || !vars.includes("name") || !vars.includes("age")) {
+      throw new Error(`Expected [name, age], got: ${JSON.stringify(vars)}`);
+    }
+    return vars;
+  }));
+
+  results.push(runTest_("extractVariables_empty", () => {
+    const vars = extractVariables_("No variables here.");
+    if (vars.length !== 0) throw new Error(`Expected [], got: ${JSON.stringify(vars)}`);
+    return vars;
+  }));
+
+  results.push(runTest_("extractVariables_deduplicate", () => {
+    const vars = extractVariables_("{{lang}} and {{lang}} again");
+    if (vars.length !== 1) throw new Error(`Expected 1 unique var, got: ${JSON.stringify(vars)}`);
+    return vars;
+  }));
+
+  results.push(runTest_("parseVariables_array", () => {
+    const vars = parseVariables_([{ name: "x", default: "y" }]);
+    if (!Array.isArray(vars) || vars[0].name !== "x") throw new Error("parseVariables_ failed for array input");
+    return vars;
+  }));
+
+  results.push(runTest_("parseVariables_json_string", () => {
+    const vars = parseVariables_('[{"name":"x","default":"y"}]');
+    if (!Array.isArray(vars) || vars[0].name !== "x") throw new Error("parseVariables_ failed for JSON string");
+    return vars;
+  }));
+
+  results.push(runTest_("validateTemplateVariables_ok", () => {
+    const result = validateTemplateVariables_({
+      Full_Prompt: "Review {{language}} code",
+      Variables: [{ name: "language", description: "lang", default: "JS" }]
+    });
+    if (!result.ok) throw new Error(`Validation should pass: ${JSON.stringify(result)}`);
+    return result;
+  }));
+
+  results.push(runTest_("validateTemplateVariables_undeclared", () => {
+    const result = validateTemplateVariables_({
+      Full_Prompt: "Review {{language}} code for {{focus}}",
+      Variables: [{ name: "language", description: "lang", default: "JS" }]
+    });
+    if (result.ok) throw new Error("Validation should fail for undeclared variable");
+    if (!result.undeclared.includes("focus")) throw new Error("Should report 'focus' as undeclared");
+    return result;
+  }));
+
+  const templateData = {
+    Title: "Test Template - Code Review",
+    Category: "כתיבת פרומפטים",
+    Subcategory: "פרומפט תבנית",
+    Description: "Test template with variable substitution",
+    Full_Prompt: "Review the following {{language}} code and check for {{focus_area}} issues.",
+    Variables: JSON.stringify([
+      { name: "language", description: "שפת תכנות", default: "JavaScript" },
+      { name: "focus_area", description: "מוקד הבדיקה", default: "security" }
+    ]),
+    Tags: ["template", "test"],
+    Prompt_Type: "Template",
+    Status: "Draft",
+    Source: "Test Runner"
+  };
+
+  let createdPromptId = null;
+
+  results.push(runTest_("addTemplatePrompt", () => {
+    const record = addPrompt(templateData);
+    createdPromptId = record.Prompt_ID;
+    if (!createdPromptId) throw new Error("No Prompt_ID returned");
+    return { promptId: createdPromptId };
+  }));
+
+  if (createdPromptId) {
+    results.push(runTest_("getTemplateVariables", () => {
+      const result = getTemplateVariables(createdPromptId);
+      if (!result.isTemplate) throw new Error("Should be detected as template");
+      if (result.usedVars.length !== 2) throw new Error(`Expected 2 vars, got: ${result.usedVars.length}`);
+      return result;
+    }));
+
+    results.push(runTest_("fillTemplate_success", () => {
+      const result = fillTemplate(createdPromptId, { language: "Python", focus_area: "performance" });
+      if (!result.filledText.includes("Python")) throw new Error("Variable 'language' not substituted");
+      if (!result.filledText.includes("performance")) throw new Error("Variable 'focus_area' not substituted");
+      if (result.filledText.includes("{{")) throw new Error("Unfilled variables remain in text");
+      return result;
+    }));
+
+    results.push(runTest_("fillTemplate_missingVariable", () => {
+      try {
+        fillTemplate(createdPromptId, { language: "Python" });
+        throw new Error("Should have thrown for missing variable 'focus_area'");
+      } catch (e) {
+        if (!e.message.includes("focus_area")) throw new Error(`Wrong error: ${e.message}`);
+        return { caught: e.message };
+      }
+    }));
+  }
+
+  return buildTestSummary_("runPromptLibraryTemplateTest", results);
+}
+
 function runPromptLibraryFullTestSuite() {
   const suites = [];
 
@@ -92,6 +201,7 @@ function runPromptLibraryFullTestSuite() {
   suites.push(runPromptLibraryTaxonomyTest());
   suites.push(runPromptLibraryValidationTest());
   suites.push(runPromptLibraryMigrationInspectionTest());
+  suites.push(runPromptLibraryTemplateTest());
 
   const summary = {
     suiteName: "runPromptLibraryFullTestSuite",

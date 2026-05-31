@@ -220,7 +220,8 @@ function normalizePromptData_(promptData) {
     Created_At: promptData.Created_At || now,
     Updated_At: promptData.Updated_At || now,
     Source: String(promptData.Source || "").trim(),
-    Notes: String(promptData.Notes || "").trim()
+    Notes: String(promptData.Notes || "").trim(),
+    Variables: serializeVariables_(promptData.Variables)
   };
 }
 
@@ -289,4 +290,121 @@ function parseBoolean_(value) {
   }
 
   return false;
+}
+
+// ─── Template System ───────────────────────────────────────────────────────
+
+function fillTemplate(promptId, valuesMap) {
+  const record = getPromptRecordById(promptId);
+  if (!record) throw new Error(`Prompt not found: ${promptId}`);
+
+  const fullText = getPromptFullText_(promptId);
+  const usedVars = extractVariables_(fullText);
+
+  if (usedVars.length === 0) {
+    return { promptId, filledText: fullText, variables: [], substitutions: 0 };
+  }
+
+  const missing = usedVars.filter(v => valuesMap[v] === undefined || valuesMap[v] === null);
+  if (missing.length > 0) {
+    throw new Error(`Missing values for variables: ${missing.join(", ")}`);
+  }
+
+  let filledText = fullText;
+  usedVars.forEach(varName => {
+    filledText = filledText.replace(
+      new RegExp("\\{\\{" + escapeRegex_(varName) + "\\}\\}", "g"),
+      String(valuesMap[varName])
+    );
+  });
+
+  logAction("FILL_TEMPLATE", "Prompt", promptId, "Success", `Template filled: ${usedVars.length} variables`);
+
+  return { promptId, filledText, variables: usedVars, substitutions: usedVars.length };
+}
+
+function getTemplateVariables(promptId) {
+  const record = getPromptRecordById(promptId);
+  if (!record) throw new Error(`Prompt not found: ${promptId}`);
+
+  const fullText = getPromptFullText_(promptId);
+  const usedVars = extractVariables_(fullText);
+  const definedVars = parseVariables_(record.Variables);
+
+  return {
+    promptId,
+    isTemplate: usedVars.length > 0,
+    usedVars,
+    definedVars,
+    allDeclared: usedVars.every(v => definedVars.some(d => d.name === v))
+  };
+}
+
+function getPromptFullText_(promptId) {
+  const record = getPromptRecordById(promptId);
+  if (!record || !record.Full_Doc_Link) return String(record ? record.Preview_Text || "" : "");
+
+  try {
+    const documentId = extractDocumentIdFromUrl_(record.Full_Doc_Link);
+    const body = DocumentApp.openById(documentId).getBody();
+    const paragraphs = body.getParagraphs();
+    const lines = [];
+    let inSection = false;
+
+    for (const para of paragraphs) {
+      const isHeading2 = para.getHeading() === DocumentApp.ParagraphHeading.HEADING2;
+      const text = para.getText().trim();
+
+      if (isHeading2 && text === "Current Prompt") { inSection = true; continue; }
+      if (inSection && isHeading2) break;
+      if (inSection) lines.push(para.getText());
+    }
+
+    const result = lines.join("\n").trim();
+    return result || String(record.Preview_Text || "");
+  } catch (e) {
+    logError("GET_PROMPT_FULL_TEXT", "Prompt", promptId, e.message);
+    return String(record.Preview_Text || "");
+  }
+}
+
+function extractVariables_(text) {
+  const matches = String(text || "").match(/\{\{([^}]+)\}\}/g) || [];
+  return [...new Set(matches.map(m => m.replace(/^\{\{|\}\}$/g, "").trim()))];
+}
+
+function validateTemplateVariables_(promptData) {
+  const text = String(promptData.Full_Prompt || promptData.Preview_Text || "");
+  const usedVars = extractVariables_(text);
+
+  if (usedVars.length === 0) {
+    return { ok: true, usedVars: [], definedVars: [], undeclared: [] };
+  }
+
+  const definedVars = parseVariables_(promptData.Variables).map(v => v.name);
+  const undeclared = usedVars.filter(v => !definedVars.includes(v));
+
+  return { ok: undeclared.length === 0, usedVars, definedVars, undeclared };
+}
+
+function parseVariables_(value) {
+  if (!value) return [];
+  if (Array.isArray(value)) return value;
+  try {
+    const parsed = JSON.parse(String(value));
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function serializeVariables_(variables) {
+  if (!variables) return "";
+  if (typeof variables === "string") return variables;
+  if (Array.isArray(variables)) return variables.length > 0 ? JSON.stringify(variables) : "";
+  return "";
+}
+
+function escapeRegex_(str) {
+  return String(str).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
