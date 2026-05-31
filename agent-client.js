@@ -171,6 +171,10 @@ async function getRecentlyUsedPrompts(limit = 10) {
   return callPromptLibrary("getRecentlyUsedPrompts", { limit });
 }
 
+async function filterPrompts(criteria = {}) {
+  return callPromptLibrary("filterPrompts", { criteria });
+}
+
 async function runInstallSequence() {
   const steps = [
     ["healthCheck", healthCheck],
@@ -251,6 +255,7 @@ module.exports = {
   getTopRatedPrompts,
   getMostUsedPrompts,
   getRecentlyUsedPrompts,
+  filterPrompts,
   runInstallSequence
 };
 

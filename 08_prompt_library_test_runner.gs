@@ -85,6 +85,137 @@ function runPromptLibraryMigrationInspectionTest() {
   return buildTestSummary_("runPromptLibraryMigrationInspectionTest", results);
 }
 
+function runPromptLibraryRatingAndFilterTest() {
+  const results = [];
+
+  const promptData = {
+    Title: "Test Rating Prompt",
+    Category: "כללי",
+    Subcategory: "לבדיקה",
+    Description: "Prompt for rating and filter tests",
+    Full_Prompt: "Test content for rating.",
+    Prompt_Type: "General",
+    Status: "Active",
+    Source: "Test Runner"
+  };
+
+  let promptId = null;
+
+  results.push(runTest_("addPromptForRating", () => {
+    const record = addPrompt(promptData);
+    promptId = record.Prompt_ID;
+    return { promptId };
+  }));
+
+  if (promptId) {
+    results.push(runTest_("ratePrompt_valid", () => {
+      const r = ratePrompt(promptId, 4);
+      if (Number(r.Rating) !== 4) throw new Error("Expected Rating=4, got " + r.Rating);
+      return { rating: r.Rating };
+    }));
+
+    results.push(runTest_("ratePrompt_outOfRange", () => {
+      try {
+        ratePrompt(promptId, 6);
+        throw new Error("Should have thrown for rating=6");
+      } catch (e) {
+        if (!e.message.includes("1 and 5")) throw new Error("Wrong error: " + e.message);
+        return { caught: e.message };
+      }
+    }));
+
+    results.push(runTest_("recordPromptUsage", () => {
+      const r = recordPromptUsage(promptId);
+      if (Number(r.Use_Count) < 1) throw new Error("Use_Count should be >= 1");
+      return { useCount: r.Use_Count };
+    }));
+
+    results.push(runTest_("filterPrompts_byStatus", () => {
+      const filtered = filterPrompts({ status: "Active" });
+      if (!Array.isArray(filtered)) throw new Error("filterPrompts should return an array");
+      if (filtered.some(r => String(r.Status) !== "Active")) throw new Error("Filter returned non-Active records");
+      return { count: filtered.length };
+    }));
+
+    results.push(runTest_("filterPrompts_byCategory", () => {
+      const filtered = filterPrompts({ category: "כללי" });
+      if (filtered.some(r => String(r.Category).trim() !== "כללי")) throw new Error("Filter returned wrong category");
+      return { count: filtered.length };
+    }));
+
+    results.push(runTest_("filterPrompts_byMinRating", () => {
+      const filtered = filterPrompts({ minRating: 4 });
+      if (filtered.some(r => Number(r.Rating) < 4)) throw new Error("Filter returned records below minRating");
+      return { count: filtered.length };
+    }));
+
+    results.push(runTest_("getTopRatedPrompts", () => {
+      const top = getTopRatedPrompts(5);
+      if (!Array.isArray(top)) throw new Error("Expected array");
+      return { count: top.length };
+    }));
+
+    results.push(runTest_("getMostUsedPrompts", () => {
+      const used = getMostUsedPrompts(5);
+      if (!Array.isArray(used)) throw new Error("Expected array");
+      return { count: used.length };
+    }));
+  }
+
+  return buildTestSummary_("runPromptLibraryRatingAndFilterTest", results);
+}
+
+function runPromptLibraryExportImportTest() {
+  const results = [];
+
+  results.push(runTest_("exportPromptsToJson", () => {
+    const result = exportPromptsToJson(false);
+    if (!result.ok) throw new Error("Export failed");
+    if (typeof result.count !== "number") throw new Error("Expected count in result");
+    if (!result.documentUrl) throw new Error("Expected documentUrl in result");
+    return { count: result.count, hasUrl: Boolean(result.documentUrl) };
+  }));
+
+  const sampleJson = JSON.stringify([{
+    Title: "Imported Test Prompt",
+    Category: "כללי",
+    Subcategory: "לבדיקה",
+    Full_Prompt: "Imported prompt content.",
+    Prompt_Type: "General",
+    Status: "Draft",
+    Source: "Import Test"
+  }]);
+
+  results.push(runTest_("importPromptsFromJson_valid", () => {
+    const result = importPromptsFromJson(sampleJson);
+    if (!result.ok) throw new Error("Import failed: " + JSON.stringify(result.errors));
+    if (result.succeeded !== 1) throw new Error("Expected 1 imported, got " + result.succeeded);
+    return result;
+  }));
+
+  results.push(runTest_("importPromptsFromJson_invalidJson", () => {
+    try {
+      importPromptsFromJson("not valid json {{{");
+      throw new Error("Should have thrown for invalid JSON");
+    } catch (e) {
+      if (!e.message.includes("Invalid JSON")) throw new Error("Wrong error: " + e.message);
+      return { caught: e.message };
+    }
+  }));
+
+  results.push(runTest_("importPromptsFromJson_notArray", () => {
+    try {
+      importPromptsFromJson('{"Title":"not an array"}');
+      throw new Error("Should have thrown for non-array");
+    } catch (e) {
+      if (!e.message.includes("array")) throw new Error("Wrong error: " + e.message);
+      return { caught: e.message };
+    }
+  }));
+
+  return buildTestSummary_("runPromptLibraryExportImportTest", results);
+}
+
 function runPromptLibraryVersioningTest() {
   const results = [];
 
@@ -275,6 +406,8 @@ function runPromptLibraryFullTestSuite() {
   suites.push(runPromptLibraryMigrationInspectionTest());
   suites.push(runPromptLibraryVersioningTest());
   suites.push(runPromptLibraryTemplateTest());
+  suites.push(runPromptLibraryRatingAndFilterTest());
+  suites.push(runPromptLibraryExportImportTest());
 
   const summary = {
     suiteName: "runPromptLibraryFullTestSuite",

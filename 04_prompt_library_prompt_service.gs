@@ -135,6 +135,27 @@ function getFavoritePrompts() {
   return findPromptRecords("").filter(record => parseBoolean_(record.Is_Favorite));
 }
 
+function filterPrompts(criteria) {
+  var all = findPromptRecords("");
+  var c = criteria || {};
+
+  return all.filter(function(r) {
+    if (c.category && String(r.Category || "").trim() !== String(c.category).trim()) return false;
+    if (c.subcategory && String(r.Subcategory || "").trim() !== String(c.subcategory).trim()) return false;
+    if (c.status && String(r.Status || "").trim() !== String(c.status).trim()) return false;
+    if (c.promptType && String(r.Prompt_Type || "").trim() !== String(c.promptType).trim()) return false;
+    if (c.toolTarget && String(r.Tool_Target || "").trim() !== String(c.toolTarget).trim()) return false;
+    if (c.isFavorite === true && !parseBoolean_(r.Is_Favorite)) return false;
+    if (c.minRating && (isNaN(Number(r.Rating)) || Number(r.Rating) < Number(c.minRating))) return false;
+    if (c.query) {
+      var q = String(c.query).toLowerCase();
+      var text = [r.Title, r.Description, r.Tags, r.Notes, r.Source].join(" ").toLowerCase();
+      if (!text.includes(q)) return false;
+    }
+    return true;
+  });
+}
+
 function archivePrompt(promptId) {
   return updatePromptRecord(promptId, { Status: "Archived" });
 }

@@ -10,6 +10,7 @@
 |---|---|
 | תשתית בסיסית | ✅ הושלם |
 | תיעוד ועקרונות עבודה | ✅ הושלם |
+| filterPrompts + ולידציה + בדיקות + README | ✅ הושלם |
 | פריסה לסביבה אמיתית | ⏳ ממתין |
 | מערכת תבניות עם משתנים | ✅ הושלם |
 | גרסאות (Versioning) | ✅ הושלם |
@@ -149,6 +150,21 @@
   - `PACKAGE_CHECK_REPORT.md` — עדכון ל-13 קבצים + HTML files + changelog גרסה
   - `prompt_library_file_manifest_v2.md` — עדכון מלא: קבצים 12 ו-13, כל פונקציות ציבוריות, 8 גיליונות, 28 פעולות API
 - **בדיקות תחביר:** 13/13 PASS (כל קבצי ה-.gs)
+- **commit:** (commit הנוכחי)
+
+#### ✅ DONE-010 — השלמת פערים: filterPrompts, ולידציה, בדיקות, README
+- **מה:** השלמת 4 פערים שזוהו לאחר סקירת הקוד הקיים.
+- **קבצים שהשתנו:**
+  - `04_prompt_library_prompt_service.gs` — פונקציה חדשה `filterPrompts(criteria)`: סינון לפי category, subcategory, status, promptType, toolTarget, isFavorite, minRating, query
+  - `06_prompt_library_validation_service.gs` — הוספת ולידציה לשדה Rating (1–5) ב-`validatePromptRecordShape_`
+  - `08_prompt_library_test_runner.gs` — הוספת 2 סוויטות בדיקות חדשות:
+    - `runPromptLibraryRatingAndFilterTest()` — 9 בדיקות: ratePrompt, recordPromptUsage, filterPrompts × 3, getTopRated/MostUsed
+    - `runPromptLibraryExportImportTest()` — 4 בדיקות: export, import valid, import invalid JSON × 2
+  - שתי הסוויטות נוספו ל-`runPromptLibraryFullTestSuite()`
+  - `11_prompt_library_web_app_agent_gateway.gs` — הוספת פעולת `filterPrompts` (29 פעולות כעת)
+  - `agent-client.js` — הוספת `filterPrompts(criteria)`
+  - `README_INSTALLATION.md` — שכתוב מלא: 5 שלבים, כל 13+2 קבצים, קריטריון סיום
+- **בדיקות תחביר:** 14/14 PASS (13 .gs + agent-client.js)
 - **commit:** (commit הנוכחי)
 
 ---
