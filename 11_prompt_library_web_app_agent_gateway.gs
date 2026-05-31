@@ -28,7 +28,9 @@ const AGENT_GATEWAY_CONFIG = Object.freeze({
     "fillTemplate",
     "getTemplateVariables",
     "updatePromptContent",
-    "getPromptHistory"
+    "getPromptHistory",
+    "exportPrompts",
+    "importPrompts"
   ]
 });
 
@@ -124,7 +126,9 @@ function dispatchAgentAction_(action, payload) {
       requiredValue_(payload.updates, "updates"),
       payload.changeSummary || ""
     ),
-    getPromptHistory: () => getPromptHistory(requiredValue_(payload.promptId, "promptId"))
+    getPromptHistory: () => getPromptHistory(requiredValue_(payload.promptId, "promptId")),
+    exportPrompts: () => exportPromptsToJson(payload.includeArchived === true),
+    importPrompts: () => importPromptsFromJson(requiredValue_(payload.jsonString, "jsonString"))
   };
 
   const handler = actionMap[action];

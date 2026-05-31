@@ -139,6 +139,79 @@ function archivePrompt(promptId) {
   return updatePromptRecord(promptId, { Status: "Archived" });
 }
 
+// ─── Export / Import ───────────────────────────────────────────────────────
+
+function exportPromptsToJson(includeArchived) {
+  const all = findPromptRecords("");
+  const records = includeArchived
+    ? all
+    : all.filter(function(r) { return String(r.Status || "").trim() !== "Archived"; });
+
+  const exportData = records.map(function(r) {
+    return {
+      Title: r.Title,
+      Category: r.Category,
+      Subcategory: r.Subcategory,
+      Description: r.Description,
+      Tags: r.Tags,
+      Is_Favorite: r.Is_Favorite,
+      Tool_Target: r.Tool_Target,
+      Prompt_Type: r.Prompt_Type,
+      Status: r.Status,
+      Source: r.Source,
+      Notes: r.Notes,
+      Variables: r.Variables,
+      _original_Prompt_ID: r.Prompt_ID,
+      _original_Full_Doc_Link: r.Full_Doc_Link,
+      _exported_at: new Date().toISOString()
+    };
+  });
+
+  const jsonString = JSON.stringify(exportData, null, 2);
+  const docName = "Prompt Library Export - " + Utilities.formatDate(new Date(), PROMPT_LIBRARY_SCHEMA.timezone, "yyyy-MM-dd HH:mm");
+  const doc = DocumentApp.create(docName);
+  doc.getBody().appendParagraph(jsonString);
+  doc.saveAndClose();
+
+  logAction("EXPORT_PROMPTS", "Workbook", SpreadsheetApp.getActiveSpreadsheet().getId(), "Success",
+    "Exported " + exportData.length + " prompts to: " + doc.getUrl());
+
+  return { ok: true, count: exportData.length, documentUrl: doc.getUrl(), documentName: docName };
+}
+
+function importPromptsFromJson(jsonString) {
+  var items;
+  try {
+    items = JSON.parse(jsonString);
+    if (!Array.isArray(items)) throw new Error("JSON must be an array of prompts");
+  } catch (e) {
+    throw new Error("Invalid JSON: " + e.message);
+  }
+
+  var results = { total: items.length, succeeded: 0, failed: 0, errors: [] };
+
+  items.forEach(function(item, index) {
+    try {
+      var importData = Object.assign({}, item);
+      delete importData._original_Prompt_ID;
+      delete importData._original_Full_Doc_Link;
+      delete importData._exported_at;
+      addPrompt(importData);
+      results.succeeded++;
+    } catch (e) {
+      results.failed++;
+      results.errors.push({ index: index, title: item.Title || "(no title)", error: e.message });
+    }
+  });
+
+  logAction("IMPORT_PROMPTS", "Workbook", SpreadsheetApp.getActiveSpreadsheet().getId(),
+    results.failed === 0 ? "Success" : "Warning",
+    "Imported: " + results.succeeded + "/" + results.total + ", Failed: " + results.failed);
+
+  results.ok = results.failed === 0;
+  return results;
+}
+
 function deprecatePrompt(promptId) {
   return updatePromptRecord(promptId, { Status: "Deprecated" });
 }

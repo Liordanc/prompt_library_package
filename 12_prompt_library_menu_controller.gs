@@ -40,6 +40,12 @@ function createPromptLibraryMenu() {
         .addItem("Show Agent Token Status", "menuShowAgentTokenStatus")
         .addItem("Run Gateway Health Check Local", "menuRunGatewayHealthCheckLocal")
     )
+    .addSubMenu(
+      SpreadsheetApp.getUi()
+        .createMenu("Import / Export")
+        .addItem("Export Prompts to JSON Doc", "menuExportPromptsToJson")
+        .addItem("Import Prompts from JSON", "menuOpenImportSidebar")
+    )
     .addSeparator()
     .addItem("➕ Add New Prompt", "menuOpenAddPromptSidebar")
     .addItem("Create Test Prompt", "menuCreateTestPrompt")
@@ -378,4 +384,31 @@ function sidebarAddPrompt(formData) {
   const result = addPrompt(formData);
   logAction("SIDEBAR_ADD_PROMPT", "Prompt", result.Prompt_ID, "Success", "Added via sidebar: " + result.Title);
   return result;
+}
+
+// ─── Import / Export ───────────────────────────────────────────────────────
+
+function menuExportPromptsToJson() {
+  runMenuAction_("Export Prompts to JSON", () => {
+    const result = exportPromptsToJson(false);
+    showLongMessage_("Export Complete", [
+      "Exported " + result.count + " prompts.",
+      "",
+      "Document URL:",
+      result.documentUrl
+    ].join("\n"));
+    return result;
+  });
+}
+
+function menuOpenImportSidebar() {
+  const html = HtmlService
+    .createHtmlOutputFromFile("prompt_library_import_sidebar")
+    .setTitle("Import Prompts from JSON")
+    .setWidth(320);
+  SpreadsheetApp.getUi().showSidebar(html);
+}
+
+function sidebarImportPrompts(jsonString) {
+  return importPromptsFromJson(jsonString);
 }

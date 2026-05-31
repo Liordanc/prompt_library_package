@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, sans-serif; font-size: 13px; color: #202124; background: #fff; }
+  .header { background: #1a73e8; color: #fff; padding: 12px 16px; font-size: 14px; font-weight: bold; }
+  .body { padding: 14px 16px; }
+  label { display: block; font-size: 11px; font-weight: bold; color: #5f6368; text-transform: uppercase; margin-bottom: 4px; }
+  textarea { width: 100%; border: 1px solid #dadce0; border-radius: 4px; padding: 8px; font-size: 12px; font-family: monospace; resize: vertical; min-height: 200px; outline: none; }
+  textarea:focus { border-color: #1a73e8; }
+  .actions { display: flex; gap: 8px; padding: 12px 16px; border-top: 1px solid #dadce0; background: #f8f9fa; }
+  button.primary { flex: 1; background: #1a73e8; color: #fff; border: none; border-radius: 4px; padding: 8px; font-size: 13px; cursor: pointer; font-weight: bold; }
+  button.primary:hover { background: #1557b0; }
+  button.primary:disabled { background: #9aa0a6; cursor: default; }
+  button.secondary { background: #fff; color: #5f6368; border: 1px solid #dadce0; border-radius: 4px; padding: 8px 12px; font-size: 13px; cursor: pointer; }
+  #status { padding: 10px 16px; font-size: 12px; display: none; white-space: pre-wrap; }
+  #status.success { background: #e6f4ea; color: #137333; display: block; }
+  #status.error { background: #fce8e6; color: #c5221f; display: block; }
+  #status.loading { background: #e8f0fe; color: #1a73e8; display: block; }
+  #status.warning { background: #fef7e0; color: #b06000; display: block; }
+  .hint { font-size: 11px; color: #5f6368; margin-top: 6px; line-height: 1.5; }
+  #preview-bar { margin-top: 8px; padding: 6px 8px; background: #f8f9fa; border: 1px solid #dadce0; border-radius: 4px; font-size: 12px; color: #3c4043; display: none; }
+</style>
+</head>
+<body>
+
+<div class="header">📥 Import Prompts from JSON</div>
+
+<div class="body">
+  <label>Paste JSON Array</label>
+  <textarea id="json-input" placeholder='[
+  {
+    "Title": "My Prompt",
+    "Category": "כללי",
+    "Full_Prompt": "...",
+    "Prompt_Type": "General",
+    "Status": "Active"
+  }
+]' oninput="onInput()"></textarea>
+  <div id="preview-bar"></div>
+  <p class="hint">Paste a JSON array of prompts. Each item will be imported as a new prompt with a new ID. Fields: Title, Category, Subcategory, Description, Full_Prompt, Tags, Tool_Target, Prompt_Type, Status, Source, Notes, Variables.</p>
+</div>
+
+<div id="status"></div>
+
+<div class="actions">
+  <button class="secondary" onclick="clearAll()">Clear</button>
+  <button class="primary" id="import-btn" onclick="doImport()" disabled>Import</button>
+</div>
+
+<script>
+  function setStatus(msg, type) {
+    var el = document.getElementById('status');
+    el.textContent = msg;
+    el.className = type;
+  }
+
+  function onInput() {
+    var text = document.getElementById('json-input').value.trim();
+    var bar = document.getElementById('preview-bar');
+    var btn = document.getElementById('import-btn');
+
+    if (!text) { bar.style.display = 'none'; btn.disabled = true; return; }
+
+    try {
+      var items = JSON.parse(text);
+      if (!Array.isArray(items)) throw new Error('Must be a JSON array');
+      bar.textContent = '✓ Valid JSON — ' + items.length + ' prompt(s) ready to import';
+      bar.style.display = 'block';
+      btn.disabled = false;
+    } catch (e) {
+      bar.textContent = '✗ Invalid JSON: ' + e.message;
+      bar.style.display = 'block';
+      btn.disabled = true;
+    }
+  }
+
+  function doImport() {
+    var text = document.getElementById('json-input').value.trim();
+    if (!text) return;
+
+    setStatus('Importing…', 'loading');
+    document.getElementById('import-btn').disabled = true;
+
+    google.script.run
+      .withSuccessHandler(function(result) {
+        document.getElementById('import-btn').disabled = false;
+        var type = result.ok ? 'success' : 'warning';
+        var msg = '✓ Imported: ' + result.succeeded + '/' + result.total;
+        if (result.failed > 0) {
+          msg += '\n✗ Failed: ' + result.failed;
+          result.errors.forEach(function(e) {
+            msg += '\n  • [' + e.index + '] ' + e.title + ': ' + e.error;
+          });
+        }
+        setStatus(msg, type);
+      })
+      .withFailureHandler(function(e) {
+        document.getElementById('import-btn').disabled = false;
+        setStatus('Error: ' + e.message, 'error');
+      })
+      .sidebarImportPrompts(text);
+  }
+
+  function clearAll() {
+    document.getElementById('json-input').value = '';
+    document.getElementById('preview-bar').style.display = 'none';
+    document.getElementById('import-btn').disabled = true;
+    var el = document.getElementById('status');
+    el.className = '';
+    el.style.display = 'none';
+  }
+</script>
+</body>
+</html>

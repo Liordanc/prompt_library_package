@@ -14,7 +14,7 @@
 | מערכת תבניות עם משתנים | ✅ הושלם |
 | גרסאות (Versioning) | ✅ הושלם |
 | UI Sidebar | ✅ הושלם |
-| ייבוא/ייצוא | ⏳ ממתין |
+| ייבוא/ייצוא | ✅ הושלם |
 
 ---
 
@@ -105,6 +105,23 @@
     - `sidebarAddPrompt(formData)` — מקבל נתוני טופס ומפעיל `addPrompt()`
 - **בדיקות תחביר:** PASS על `12_`
 - **בדיקות UI:** ממתינות לפריסה בסביבה אמיתית (TODO-001)
+- **commit:** `fec4f84`
+- **סטטוס:** ✅ הושלם
+
+#### ✅ DONE-007 — ייבוא/ייצוא בצובר (TODO-005)
+- **מה:** export כל הפרומפטים ל-JSON Doc + import מ-JSON דרך sidebar.
+- **קבצים שנוצרו/עודכנו:**
+  - `04_prompt_library_prompt_service.gs` — שתי פונקציות חדשות:
+    - `exportPromptsToJson(includeArchived)` — מייצא ל-Google Doc עם JSON, מחזיר URL
+    - `importPromptsFromJson(jsonString)` — מייבא מ-JSON array, מחזיר `{ok, total, succeeded, failed, errors}`
+  - `prompt_library_import_sidebar.html` — sidebar עם textarea ל-JSON, preview של כמות פריטים, הצגת שגיאות פרטנית
+  - `12_prompt_library_menu_controller.gs` — תפריט "Import / Export" עם:
+    - `menuExportPromptsToJson()` — מייצא ומציג URL
+    - `menuOpenImportSidebar()` — פותח sidebar לייבוא
+    - `sidebarImportPrompts(jsonString)` — מחבר את ה-sidebar לשרת
+  - `11_prompt_library_web_app_agent_gateway.gs` — פעולות `exportPrompts`, `importPrompts` ב-API
+- **הגיון עיצובי:** export מייצר snapshot ניתן לייבוא בחזרה; שדות ID ו-Doc Link נמחקים בייצוא כך שבייבוא יווצרו IDs חדשים ו-Docs חדשים
+- **בדיקות תחביר:** PASS על 3 קבצים
 - **commit:** (commit הנוכחי)
 
 ---
@@ -171,12 +188,13 @@
 
 #### ✅ TODO-004 — UI Sidebar ← **הושלם ב-DONE-006**
 
+#### ✅ TODO-005 — ייבוא/ייצוא בצובר ← **הושלם ב-DONE-007**
+
 ---
 
 ### 🟢 עדיפות נמוכה
 
-#### ⏳ TODO-005 — ייבוא/ייצוא בצובר
-- **מה:** import מ-JSON/CSV, export כל הספרייה
+#### ✅ TODO-005 — ייבוא/ייצוא ← **הושלם ב-DONE-007**
 
 #### ⏳ TODO-006 — דירוג והיסטוריית שימוש
 - **מה:** דירוג 1–5, שדה `Last_Used`, מונה `Use_Count`
