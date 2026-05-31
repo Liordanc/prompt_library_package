@@ -138,6 +138,17 @@
   - `normalizePromptData_` עודכן — כולל Rating, Use_Count, Last_Used_At
   - `11_prompt_library_web_app_agent_gateway.gs` — 5 פעולות API חדשות
 - **בדיקות תחביר:** PASS על 3 קבצים
+- **commit:** `f21a8c3`
+- **סטטוס:** ✅ הושלם
+
+#### ✅ DONE-009 — סנכרון תיעוד וקוד לקוח
+- **מה:** עדכון כל התיעוד והקוד הנגזר כך שישקף את מלוא הפיצ'רים שנבנו.
+- **קבצים שהשתנו:**
+  - `agent-client.js` — הוספת 11 פונקציות wrapper: fillTemplate, getTemplateVariables, updatePromptContent, getPromptHistory, exportPrompts, importPrompts, ratePrompt, recordPromptUsage, getTopRatedPrompts, getMostUsedPrompts, getRecentlyUsedPrompts + עדכון `module.exports`
+  - `01_prompt_library_schema_config.gs` — גרסת סכמה מ-`1.0.0` ל-`1.1.0`
+  - `PACKAGE_CHECK_REPORT.md` — עדכון ל-13 קבצים + HTML files + changelog גרסה
+  - `prompt_library_file_manifest_v2.md` — עדכון מלא: קבצים 12 ו-13, כל פונקציות ציבוריות, 8 גיליונות, 28 פעולות API
+- **בדיקות תחביר:** 13/13 PASS (כל קבצי ה-.gs)
 - **commit:** (commit הנוכחי)
 
 ---
