@@ -12,7 +12,7 @@
 | תיעוד ועקרונות עבודה | ✅ הושלם |
 | פריסה לסביבה אמיתית | ⏳ ממתין |
 | מערכת תבניות עם משתנים | ✅ הושלם |
-| גרסאות (Versioning) | ⏳ ממתין |
+| גרסאות (Versioning) | ✅ הושלם |
 | UI Sidebar | ⏳ ממתין |
 | ייבוא/ייצוא | ⏳ ממתין |
 
@@ -64,6 +64,26 @@
   - `runPromptLibraryFullTestSuite()` עודכן — כולל את חבילת הבדיקות החדשה
   - `11_prompt_library_web_app_agent_gateway.gs` — הוספת 2 פעולות ל-API: `fillTemplate`, `getTemplateVariables`
 - **בדיקות תחביר:** PASS על כל 4 הקבצים (`node --check`)
+- **בדיקות GAS:** ממתינות לפריסה בסביבה אמיתית (TODO-001)
+- **commit:** `3bda9bb`
+- **סטטוס:** ✅ הושלם
+
+#### ✅ DONE-005 — גרסאות (Versioning) (TODO-003)
+- **מה:** מימוש מלא של מערכת גרסאות — שמירת snapshot לפני כל עדכון תוכן.
+- **קבצים שהשתנו:**
+  - `01_prompt_library_schema_config.gs` — הוספת prefix `VER` ל-idPrefixes; הוספת גיליון `PromptVersions` עם 6 עמודות (Version_ID, Prompt_ID, Version, Snapshot_JSON, Saved_At, Change_Summary)
+  - `04_prompt_library_prompt_service.gs` — הוספת 4 פונקציות:
+    - `updatePromptContent(promptId, updates, changeSummary)` — ציבורי, שומר snapshot + מגדיל גרסה + מעדכן
+    - `getPromptHistory(promptId)` — ציבורי, מחזיר רשימת snapshots ממוינת לפי תאריך
+    - `saveVersionSnapshot_(promptId, changeSummary)` — פנימי, שומר שורה ב-PromptVersions
+    - `incrementVersion_(currentVersion)` — פנימי, מגדיל גרסה minor (`v1.0 → v1.1`)
+  - `08_prompt_library_test_runner.gs` — הוספת `runPromptLibraryVersioningTest()` עם 8 בדיקות:
+    - 3 בדיקות unit על `incrementVersion_`
+    - 5 בדיקות אינטגרציה (addPrompt → updatePromptContent × 2 → getPromptHistory × 2)
+  - `runPromptLibraryFullTestSuite()` עודכן — כולל את חבילת הבדיקות החדשה
+  - `11_prompt_library_web_app_agent_gateway.gs` — הוספת `updatePromptContent` ו-`getPromptHistory` ל-API
+- **הגיון עיצובי:** `updatePromptRecord` (metadata בלבד — favorite, archive) אינו מגדיל גרסה. רק `updatePromptContent` (שינוי תוכן) מגדיל גרסה ושומר snapshot.
+- **בדיקות תחביר:** PASS על כל 4 הקבצים
 - **בדיקות GAS:** ממתינות לפריסה בסביבה אמיתית (TODO-001)
 - **commit:** (commit הנוכחי)
 
@@ -125,12 +145,7 @@
 
 ### 🟡 עדיפות בינונית
 
-#### ⏳ TODO-003 — גרסאות (Versioning)
-- **מה צריך לעשות:**
-  1. הוסף עמודה `Version` לסכמה (ב-`01_`)
-  2. לפני כל עדכון פרומפט — שמור גרסה קודמת בגיליון `PromptVersions`
-  3. פונקציה `getPromptHistory(promptId)` — מחזירה רשימת גרסאות
-- **קריטריון סיום:** גרסה קודמת נשמרת אוטומטית בכל עדכון
+#### ✅ TODO-003 — גרסאות (Versioning) ← **הושלם ב-DONE-005**
 
 #### ⏳ TODO-004 — UI Sidebar להוספת פרומפטים
 - **מה צריך לעשות:**

@@ -292,6 +292,65 @@ function parseBoolean_(value) {
   return false;
 }
 
+// ─── Versioning System ────────────────────────────────────────────────────
+
+function updatePromptContent(promptId, updates, changeSummary) {
+  saveVersionSnapshot_(promptId, changeSummary || "Content updated");
+
+  const record = getPromptRecordById(promptId);
+  const nextVersion = incrementVersion_(record.Version);
+
+  const result = updatePromptRecord(promptId, Object.assign({}, updates, { Version: nextVersion }));
+
+  logAction("UPDATE_PROMPT_CONTENT", "Prompt", promptId, "Success", `Updated to ${nextVersion}: ${changeSummary || ""}`);
+
+  return result;
+}
+
+function getPromptHistory(promptId) {
+  const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = spreadsheet.getSheetByName("PromptVersions");
+
+  if (!sheet) return [];
+
+  const headers = getHeaderRow_(sheet);
+  const lastRow = sheet.getLastRow();
+
+  if (lastRow < 2) return [];
+
+  const values = sheet.getRange(2, 1, lastRow - 1, headers.length).getValues();
+
+  return values
+    .map(row => objectFromHeaders_(headers, row))
+    .filter(record => String(record.Prompt_ID).trim() === String(promptId).trim())
+    .sort((a, b) => new Date(b.Saved_At) - new Date(a.Saved_At));
+}
+
+function saveVersionSnapshot_(promptId, changeSummary) {
+  const record = getPromptRecordById(promptId);
+  if (!record) throw new Error(`Prompt not found: ${promptId}`);
+
+  const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = spreadsheet.getSheetByName("PromptVersions");
+
+  if (!sheet) throw new Error("PromptVersions sheet does not exist");
+
+  const versionId = createId_(PROMPT_LIBRARY_SCHEMA.settings.idPrefixes.version);
+
+  sheet.appendRow([versionId, promptId, record.Version, JSON.stringify(record), new Date(), changeSummary || ""]);
+
+  logAction("SAVE_VERSION_SNAPSHOT", "Prompt", promptId, "Success", `Snapshot saved: ${record.Version}`);
+
+  return { versionId, promptId, version: record.Version };
+}
+
+function incrementVersion_(currentVersion) {
+  const text = String(currentVersion || PROMPT_LIBRARY_SCHEMA.settings.defaultVersion);
+  const match = text.match(/^v?(\d+)\.(\d+)$/);
+  if (!match) return text;
+  return `v${match[1]}.${parseInt(match[2], 10) + 1}`;
+}
+
 // ─── Template System ───────────────────────────────────────────────────────
 
 function fillTemplate(promptId, valuesMap) {

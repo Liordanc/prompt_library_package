@@ -85,6 +85,78 @@ function runPromptLibraryMigrationInspectionTest() {
   return buildTestSummary_("runPromptLibraryMigrationInspectionTest", results);
 }
 
+function runPromptLibraryVersioningTest() {
+  const results = [];
+
+  results.push(runTest_("incrementVersion_basic", () => {
+    const next = incrementVersion_("v1.0");
+    if (next !== "v1.1") throw new Error(`Expected v1.1, got ${next}`);
+    return next;
+  }));
+
+  results.push(runTest_("incrementVersion_two_digits", () => {
+    const next = incrementVersion_("v1.9");
+    if (next !== "v1.10") throw new Error(`Expected v1.10, got ${next}`);
+    return next;
+  }));
+
+  results.push(runTest_("incrementVersion_unknown_format", () => {
+    const next = incrementVersion_("custom-version");
+    if (next !== "custom-version") throw new Error(`Expected unchanged, got ${next}`);
+    return next;
+  }));
+
+  const basePromptData = {
+    Title: "Test Versioning Prompt",
+    Category: "כללי",
+    Subcategory: "לבדיקה",
+    Description: "Prompt for versioning test",
+    Full_Prompt: "Original content.",
+    Tags: ["versioning", "test"],
+    Prompt_Type: "General",
+    Status: "Draft",
+    Source: "Test Runner"
+  };
+
+  let createdPromptId = null;
+
+  results.push(runTest_("addPromptForVersioning", () => {
+    const record = addPrompt(basePromptData);
+    createdPromptId = record.Prompt_ID;
+    if (record.Version !== "v1.0") throw new Error(`Expected v1.0, got ${record.Version}`);
+    return { promptId: createdPromptId, version: record.Version };
+  }));
+
+  if (createdPromptId) {
+    results.push(runTest_("updatePromptContent_incrementsVersion", () => {
+      const updated = updatePromptContent(createdPromptId, { Description: "Updated description" }, "First update");
+      if (updated.Version !== "v1.1") throw new Error(`Expected v1.1, got ${updated.Version}`);
+      return { version: updated.Version };
+    }));
+
+    results.push(runTest_("getPromptHistory_hasSnapshot", () => {
+      const history = getPromptHistory(createdPromptId);
+      if (history.length < 1) throw new Error("Expected at least 1 snapshot in history");
+      if (history[0].Prompt_ID !== createdPromptId) throw new Error("Snapshot Prompt_ID mismatch");
+      return { snapshots: history.length, latestVersion: history[0].Version };
+    }));
+
+    results.push(runTest_("updatePromptContent_secondUpdate", () => {
+      const updated = updatePromptContent(createdPromptId, { Description: "Second update" }, "Second update");
+      if (updated.Version !== "v1.2") throw new Error(`Expected v1.2, got ${updated.Version}`);
+      return { version: updated.Version };
+    }));
+
+    results.push(runTest_("getPromptHistory_twoSnapshots", () => {
+      const history = getPromptHistory(createdPromptId);
+      if (history.length < 2) throw new Error(`Expected 2+ snapshots, got ${history.length}`);
+      return { snapshots: history.length };
+    }));
+  }
+
+  return buildTestSummary_("runPromptLibraryVersioningTest", results);
+}
+
 function runPromptLibraryTemplateTest() {
   const results = [];
 
@@ -201,6 +273,7 @@ function runPromptLibraryFullTestSuite() {
   suites.push(runPromptLibraryTaxonomyTest());
   suites.push(runPromptLibraryValidationTest());
   suites.push(runPromptLibraryMigrationInspectionTest());
+  suites.push(runPromptLibraryVersioningTest());
   suites.push(runPromptLibraryTemplateTest());
 
   const summary = {
