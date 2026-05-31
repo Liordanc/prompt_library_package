@@ -173,18 +173,22 @@
 
 ### 🔴 עדיפות קריטית
 
-#### ⏳ TODO-001 — פריסה בסביבה אמיתית
-- **מה צריך לעשות:**
-  1. `clasp push` לפרויקט GAS קיים
-  2. הרצת `installPromptLibraryInfrastructureStrict()`
-  3. הרצת ולידציה מלאה:
-     - `runPromptLibrarySetupTest()`
-     - `runFirstStableWorkflowTest()`
-     - `runFullIntegrityCheck()`
-     - `runProductionReadinessCheck()` → חייב להחזיר `ok === true`
-  4. בדיקת תפריט "Prompt Library" ב-Spreadsheet
-  5. פריסת Web App וקבלת URL
-  6. בדיקת `healthCheck` דרך `agent-client.js`
+#### 🔄 TODO-001 — פריסה בסביבה אמיתית (בתהליך)
+- **פרטי פריסה:**
+  - Script ID: `1FfQhq2JQm5mfAUpdU0qiAqxYPLW7YUY2d_qmKFB_P5GweNbf3XDRC6-c`
+  - Web App URL: `https://script.google.com/macros/s/AKfycbzBrF4kapCUMwEq4sguTbkoOg7z5EUaja632W7Ta4E3hptA5AmtCnnHHcFn8TjWbO8b/exec`
+  - `.clasp.json` — ✅ נוצר מקומית עם ה-Script ID
+  - `.env` — ✅ נוצר מקומית עם ה-URL (ממתין לטוקן)
+- **שלבים שהושלמו על ידי המשתמש:**
+  - [x] `clasp push` — בוצע (URL ו-Script ID סופקו)
+  - [x] Web App deployed — ✅ URL קיים
+- **שלבים שנותרו (המשתמש צריך לבצע ב-Spreadsheet):**
+  1. פתח את ה-Spreadsheet → תפריט **Prompt Library** → **⚙️ Admin** → **Create/Reset Agent Token**
+  2. העתק את הטוקן שמוצג
+  3. הוסף את הטוקן לקובץ `.env`: `PROMPT_LIBRARY_AGENT_TOKEN=<הטוקן>`
+  4. הרץ מ-terminal: `node -e "require('./agent-client').healthCheck().then(console.log)"`
+  5. הרץ את רצף ההגדרה המלא מתפריט **Prompt Library → Run Full Setup Sequence**
+  6. ודא: `runProductionReadinessCheck().ok === true`
 - **חסמים:** דרוש גישה ל-Google Workspace (SpreadsheetApp, DocumentApp)
 - **קריטריון סיום:** `runProductionReadinessCheck().ok === true` + Web App מחזיר `{"ok": true}` ל-healthCheck
 
