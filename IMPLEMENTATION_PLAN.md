@@ -13,7 +13,7 @@
 | פריסה לסביבה אמיתית | ⏳ ממתין |
 | מערכת תבניות עם משתנים | ✅ הושלם |
 | גרסאות (Versioning) | ✅ הושלם |
-| UI Sidebar | ⏳ ממתין |
+| UI Sidebar | ✅ הושלם |
 | ייבוא/ייצוא | ⏳ ממתין |
 
 ---
@@ -85,6 +85,26 @@
 - **הגיון עיצובי:** `updatePromptRecord` (metadata בלבד — favorite, archive) אינו מגדיל גרסה. רק `updatePromptContent` (שינוי תוכן) מגדיל גרסה ושומר snapshot.
 - **בדיקות תחביר:** PASS על כל 4 הקבצים
 - **בדיקות GAS:** ממתינות לפריסה בסביבה אמיתית (TODO-001)
+- **commit:** `6d634b6`
+- **סטטוס:** ✅ הושלם
+
+#### ✅ DONE-006 — UI Sidebar להוספת פרומפטים (TODO-004)
+- **מה:** Sidebar ב-Google Sheets לכתיבת פרומפטים ללא קוד.
+- **קבצים שנוצרו/עודכנו:**
+  - `prompt_library_sidebar.html` — טופס HTML/CSS/JS מלא עם:
+    - שדות: Title, Category (dropdown), Subcategory (dropdown דינמי), Description, Full_Prompt, Tags, Prompt_Type, Tool_Target, Status, Source, Notes, Is_Favorite
+    - זיהוי אוטומטי של `{{variable}}` בטקסט → הצגת סעיף Variables כשבוחרים Prompt_Type=Template
+    - ולידציה client-side לפני שליחה
+    - הודעות success/error אחרי שמירה
+    - ניקוי טופס לאחר שמירה מוצלחת
+  - `12_prompt_library_menu_controller.gs` — נוספו:
+    - פריט תפריט "➕ Add New Prompt"
+    - `menuOpenAddPromptSidebar()` — פותח את ה-Sidebar
+    - `sidebarGetCategories()` — מחזיר רשימת קטגוריות ל-JS
+    - `sidebarGetSubcategories(categoryName)` — מחזיר תת-קטגוריות לפי קטגוריה
+    - `sidebarAddPrompt(formData)` — מקבל נתוני טופס ומפעיל `addPrompt()`
+- **בדיקות תחביר:** PASS על `12_`
+- **בדיקות UI:** ממתינות לפריסה בסביבה אמיתית (TODO-001)
 - **commit:** (commit הנוכחי)
 
 ---
@@ -147,12 +167,9 @@
 
 #### ✅ TODO-003 — גרסאות (Versioning) ← **הושלם ב-DONE-005**
 
-#### ⏳ TODO-004 — UI Sidebar להוספת פרומפטים
-- **מה צריך לעשות:**
-  1. HTML form ב-Google Apps Script (`HtmlService`)
-  2. שדות: Title, Category, Subcategory, Description, Full_Prompt, Tags, Tool_Target, Prompt_Type
-  3. תמיכה בתצוגת משתנים לתבניות (TODO-002 תלות)
-- **קריטריון סיום:** אפשר להוסיף פרומפט מה-Spreadsheet ללא קוד
+#### ✅ TODO-004 — UI Sidebar להוספת פרומפטים ← **הושלם ב-DONE-006**
+
+#### ✅ TODO-004 — UI Sidebar ← **הושלם ב-DONE-006**
 
 ---
 

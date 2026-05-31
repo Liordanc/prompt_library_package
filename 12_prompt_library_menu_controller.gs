@@ -41,6 +41,7 @@ function createPromptLibraryMenu() {
         .addItem("Run Gateway Health Check Local", "menuRunGatewayHealthCheckLocal")
     )
     .addSeparator()
+    .addItem("➕ Add New Prompt", "menuOpenAddPromptSidebar")
     .addItem("Create Test Prompt", "menuCreateTestPrompt")
     .addItem("Run Full Setup Sequence", "menuRunFullSetupSequence")
     .addToUi();
@@ -352,4 +353,29 @@ function showLongMessage_(title, message) {
     String(message || ""),
     SpreadsheetApp.getUi().ButtonSet.OK
   );
+}
+
+// ─── Add Prompt Sidebar ───────────────────────────────────────────────────
+
+function menuOpenAddPromptSidebar() {
+  const html = HtmlService
+    .createHtmlOutputFromFile("prompt_library_sidebar")
+    .setTitle("Add New Prompt")
+    .setWidth(320);
+
+  SpreadsheetApp.getUi().showSidebar(html);
+}
+
+function sidebarGetCategories() {
+  return listCategories().map(function(cat) { return cat.Category_Name; });
+}
+
+function sidebarGetSubcategories(categoryName) {
+  return getSubcategoriesByCategory(categoryName).map(function(sub) { return sub.Subcategory; });
+}
+
+function sidebarAddPrompt(formData) {
+  const result = addPrompt(formData);
+  logAction("SIDEBAR_ADD_PROMPT", "Prompt", result.Prompt_ID, "Success", "Added via sidebar: " + result.Title);
+  return result;
 }
