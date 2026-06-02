@@ -1,4 +1,4 @@
-# Prompt Library Agent Instructions — Antigravity
+# Prompt Library Agent Instructions — API Reference
 
 ## 1. Role
 
@@ -26,160 +26,90 @@ Every POST request MUST include the agent token.
 
 The token MUST NOT be printed, logged, or exposed in final user-facing output.
 
+`healthCheck` is the only action that does not require a token (GET request).
+
 ## 4. Request Method Rules
 
 | Method | Allowed Use |
 |---|---|
-| GET | Health check only |
-| POST | Execute allowed actions |
+| GET | `healthCheck` only |
+| POST | All other actions |
 
-GET MUST NOT be used to execute operational actions.
+## 5. All 29 Allowed Actions
 
-POST MUST be used for all installation, validation, prompt creation, update, search, and control actions.
+### System & Installation
 
-## 5. Allowed Actions
+| Action | Parameters | Description |
+|---|---|---|
+| `healthCheck` | — | Verify Web App is reachable (GET, no token) |
+| `installStrict` | — | Create all sheets and columns |
+| `setupTest` | — | Validate infrastructure |
+| `firstStableWorkflowTest` | — | End-to-end workflow test |
+| `fullIntegrityCheck` | — | Validate all data and schemas |
+| `productionReadinessCheck` | — | Final production gate (must return `ok: true`) |
+| `inspectWorkbook` | — | Inspect current workbook state |
+| `migrationReport` | — | Report on migration status |
 
-The agent MAY call only the following actions:
+### Prompt CRUD
 
-```text
-healthCheck
-installStrict
-setupTest
-firstStableWorkflowTest
-fullIntegrityCheck
-productionReadinessCheck
-inspectWorkbook
-migrationReport
-addPrompt
-getPrompt
-searchPrompts
-markFavorite
-unmarkFavorite
-toggleFavorite
-archivePrompt
-validatePrompt
+| Action | Parameters | Description |
+|---|---|---|
+| `addPrompt` | `promptData: {...}` | Create a new prompt + Google Doc |
+| `getPrompt` | `promptId` | Get a single prompt by ID |
+| `searchPrompts` | `query` | Full-text search across all prompts |
+| `filterPrompts` | `criteria: {...}` | Filter by category, status, rating, etc. |
+| `archivePrompt` | `promptId` | Archive a prompt |
+| `validatePrompt` | `promptId` | Validate a single prompt record |
+
+### Favorites
+
+| Action | Parameters | Description |
+|---|---|---|
+| `markFavorite` | `promptId` | Mark as favorite |
+| `unmarkFavorite` | `promptId` | Remove from favorites |
+| `toggleFavorite` | `promptId` | Toggle favorite status |
+
+### Template System
+
+| Action | Parameters | Description |
+|---|---|---|
+| `fillTemplate` | `promptId`, `variables: {...}` | Replace `{{var}}` placeholders with values |
+| `getTemplateVariables` | `promptId` | Get defined variables for a template prompt |
+
+### Versioning
+
+| Action | Parameters | Description |
+|---|---|---|
+| `updatePromptContent` | `promptId`, `updates: {...}`, `changeSummary` | Update content + save version snapshot |
+| `getPromptHistory` | `promptId` | Get full version history |
+
+### Rating & Usage
+
+| Action | Parameters | Description |
+|---|---|---|
+| `ratePrompt` | `promptId`, `rating` (1–5) | Set rating |
+| `recordPromptUsage` | `promptId` | Increment use count + update Last_Used_At |
+| `getTopRatedPrompts` | `limit` (default: 10) | Get N highest-rated prompts |
+| `getMostUsedPrompts` | `limit` (default: 10) | Get N most-used prompts |
+| `getRecentlyUsedPrompts` | `limit` (default: 10) | Get N most recently used prompts |
+
+### Export / Import
+
+| Action | Parameters | Description |
+|---|---|---|
+| `exportPrompts` | `includeArchived` (bool) | Export all prompts to JSON (creates Google Doc) |
+| `importPrompts` | `jsonString` | Import prompts from JSON array |
+
+---
+
+## 6. Request Examples
+
+### Health Check (GET)
+```
+GET {{WEB_APP_URL}}?action=healthCheck
 ```
 
-The agent MUST NOT invent action names.
-
-The agent MUST NOT attempt to call raw Apps Script function names directly.
-
-## 6. Response Handling Rule
-
-After every request, inspect the JSON response.
-
-If `ok === true`, continue to the next planned step.
-
-If `ok === false`, STOP.
-
-When stopped, report:
-
-```text
-failed action
-error message
-failedAt value if present
-last successful action
-recommended next manual check
-```
-
-## 7. Installation Flow
-
-Use this order for first installation:
-
-```text
-healthCheck
-installStrict
-setupTest
-firstStableWorkflowTest
-fullIntegrityCheck
-productionReadinessCheck
-```
-
-Do not continue after any failed step.
-
-## 8. Installation Requests
-
-### 8.1 Health Check
-
-```json
-{
-  "action": "healthCheck"
-}
-```
-
-### 8.2 Strict Installation
-
-```json
-{
-  "token": "{{AGENT_TOKEN}}",
-  "action": "installStrict"
-}
-```
-
-### 8.3 Setup Test
-
-```json
-{
-  "token": "{{AGENT_TOKEN}}",
-  "action": "setupTest"
-}
-```
-
-### 8.4 First Stable Workflow Test
-
-```json
-{
-  "token": "{{AGENT_TOKEN}}",
-  "action": "firstStableWorkflowTest"
-}
-```
-
-### 8.5 Full Integrity Check
-
-```json
-{
-  "token": "{{AGENT_TOKEN}}",
-  "action": "fullIntegrityCheck"
-}
-```
-
-### 8.6 Production Readiness Check
-
-```json
-{
-  "token": "{{AGENT_TOKEN}}",
-  "action": "productionReadinessCheck"
-}
-```
-
-## 9. Prompt Creation Flow
-
-Use `addPrompt` only when the prompt data is complete enough to create a real record and Google Docs document.
-
-Required fields:
-
-```text
-Title
-Category
-Full_Prompt
-Tool_Target
-Prompt_Type
-Status
-```
-
-Recommended fields:
-
-```text
-Subcategory
-Description
-Tags
-Is_Favorite
-Source
-Notes
-```
-
-## 10. Add Prompt Request
-
+### Add Prompt
 ```json
 {
   "token": "{{AGENT_TOKEN}}",
@@ -192,29 +122,23 @@ Notes
     "Full_Prompt": "{{FULL_PROMPT}}",
     "Tags": ["{{TAG_1}}", "{{TAG_2}}"],
     "Is_Favorite": false,
-    "Tool_Target": "ChatGPT",
+    "Tool_Target": "General",
     "Prompt_Type": "General",
-    "Status": "Draft",
-    "Source": "Antigravity",
+    "Status": "Active",
+    "Source": "{{SOURCE}}",
     "Notes": "{{NOTES}}"
   }
 }
 ```
 
-## 11. Prompt Lookup Requests
+**Required fields:** `Title`, `Category`, `Full_Prompt`, `Tool_Target`, `Prompt_Type`, `Status`
 
-### 11.1 Get Prompt By ID
+**Allowed values:**
+- `Tool_Target`: `ChatGPT` | `Gemini` | `Claude` | `General`
+- `Prompt_Type`: `System` | `Template` | `Audit` | `Research` | `Teaching` | `Design` | `Code` | `Workflow` | `General`
+- `Status`: `Active` | `Draft` | `Deprecated` | `Archived`
 
-```json
-{
-  "token": "{{AGENT_TOKEN}}",
-  "action": "getPrompt",
-  "promptId": "{{PROMPT_ID}}"
-}
-```
-
-### 11.2 Search Prompts
-
+### Search Prompts
 ```json
 {
   "token": "{{AGENT_TOKEN}}",
@@ -223,40 +147,116 @@ Notes
 }
 ```
 
-### 11.3 Validate Prompt
-
+### Filter Prompts
 ```json
 {
   "token": "{{AGENT_TOKEN}}",
-  "action": "validatePrompt",
+  "action": "filterPrompts",
+  "criteria": {
+    "category": "כתיבת פרומפטים",
+    "status": "Active",
+    "promptType": "Audit",
+    "toolTarget": "Claude",
+    "isFavorite": true,
+    "minRating": 4,
+    "query": "keyword"
+  }
+}
+```
+All criteria fields are optional and combinable.
+
+### Fill Template
+```json
+{
+  "token": "{{AGENT_TOKEN}}",
+  "action": "fillTemplate",
+  "promptId": "{{PROMPT_ID}}",
+  "variables": {
+    "language": "Python",
+    "focus_area": "security"
+  }
+}
+```
+
+### Get Template Variables
+```json
+{
+  "token": "{{AGENT_TOKEN}}",
+  "action": "getTemplateVariables",
   "promptId": "{{PROMPT_ID}}"
 }
 ```
 
-## 12. Favorite and Archive Requests
-
-### 12.1 Mark Favorite
-
+### Update Prompt Content (creates version snapshot)
 ```json
 {
   "token": "{{AGENT_TOKEN}}",
-  "action": "markFavorite",
+  "action": "updatePromptContent",
+  "promptId": "{{PROMPT_ID}}",
+  "updates": {
+    "Full_Prompt": "Updated prompt text...",
+    "Description": "Updated description"
+  },
+  "changeSummary": "Improved clarity and added constraints"
+}
+```
+
+### Get Prompt History
+```json
+{
+  "token": "{{AGENT_TOKEN}}",
+  "action": "getPromptHistory",
   "promptId": "{{PROMPT_ID}}"
 }
 ```
 
-### 12.2 Unmark Favorite
-
+### Rate Prompt
 ```json
 {
   "token": "{{AGENT_TOKEN}}",
-  "action": "unmarkFavorite",
+  "action": "ratePrompt",
+  "promptId": "{{PROMPT_ID}}",
+  "rating": 5
+}
+```
+
+### Record Usage
+```json
+{
+  "token": "{{AGENT_TOKEN}}",
+  "action": "recordPromptUsage",
   "promptId": "{{PROMPT_ID}}"
 }
 ```
 
-### 12.3 Toggle Favorite
+### Get Top Rated
+```json
+{
+  "token": "{{AGENT_TOKEN}}",
+  "action": "getTopRatedPrompts",
+  "limit": 10
+}
+```
 
+### Export Prompts
+```json
+{
+  "token": "{{AGENT_TOKEN}}",
+  "action": "exportPrompts",
+  "includeArchived": false
+}
+```
+
+### Import Prompts
+```json
+{
+  "token": "{{AGENT_TOKEN}}",
+  "action": "importPrompts",
+  "jsonString": "[{\"Title\":\"...\", ...}]"
+}
+```
+
+### Toggle Favorite
 ```json
 {
   "token": "{{AGENT_TOKEN}}",
@@ -265,8 +265,7 @@ Notes
 }
 ```
 
-### 12.4 Archive Prompt
-
+### Archive Prompt
 ```json
 {
   "token": "{{AGENT_TOKEN}}",
@@ -275,80 +274,70 @@ Notes
 }
 ```
 
-## 13. Migration Inspection Requests
+---
 
-### 13.1 Inspect Workbook
+## 7. Response Handling
 
-```json
-{
-  "token": "{{AGENT_TOKEN}}",
-  "action": "inspectWorkbook"
-}
-```
-
-### 13.2 Migration Report
+Every response returns a JSON object. Always inspect `ok`:
 
 ```json
-{
-  "token": "{{AGENT_TOKEN}}",
-  "action": "migrationReport"
-}
+{ "ok": true, "action": "...", "result": {...} }
+{ "ok": false, "error": "...", "code": "..." }
 ```
 
-## 14. Execution Policy
+If `ok === true` → continue to next step.
 
-The agent MUST follow this policy:
+If `ok === false` → STOP and report:
+```text
+Failed action:
+Error message:
+Last successful action:
+Recommended next check:
+```
 
-1. Call only allowed actions.
-2. Use POST for all operational actions.
+---
+
+## 8. Installation Flow
+
+```text
+1. healthCheck         ← verify connectivity
+2. installStrict       ← create sheets + columns
+3. setupTest           ← validate infrastructure
+4. firstStableWorkflowTest  ← end-to-end test
+5. fullIntegrityCheck  ← validate data integrity
+6. productionReadinessCheck ← must return ok: true
+```
+
+Do not continue after any failed step.
+
+---
+
+## 9. Execution Policy
+
+1. Call only actions listed in Section 5.
+2. Use GET only for `healthCheck`. Use POST for everything else.
 3. Include the token in every POST request.
-4. Inspect every JSON response.
-5. Stop immediately on `ok=false`.
-6. Do not retry destructive or state-changing actions without explicit instruction.
-7. Do not run migration actions unless the user explicitly asks.
-8. Do not delete sheets, rows, documents, or Drive files.
-9. Do not expose the token.
-10. Report only actionable results.
+4. Inspect every response — stop on `ok: false`.
+5. Do not retry state-changing actions without explicit instruction.
+6. Do not run migration actions unless explicitly asked.
+7. Do not delete sheets, rows, documents, or Drive files.
+8. Do not expose the token in output.
 
-## 15. Final Report Format
+---
 
-After execution, return:
-
-```text
-Action performed:
-Result:
-Failed at:
-Created/updated assets:
-Validation status:
-Next required action:
-```
-
-If no failure occurred, use:
-
-```text
-Failed at: none
-```
-
-## 16. Stop Conditions
-
-The agent MUST stop when:
+## 10. Stop Conditions
 
 | Condition | Required Output |
 |---|---|
-| `ok=false` | Error report |
-| Unauthorized request | Token/configuration issue |
-| Missing action | Request structure issue |
-| Invalid action | Allowed action issue |
-| Missing required prompt field | Prompt data issue |
-| Full_Doc_Link missing after creation | Document creation issue |
+| `ok: false` | Error report |
+| Unauthorized | Token/configuration issue |
+| Unknown action | Check Section 5 |
+| Missing required field | Prompt data issue |
+| `Full_Doc_Link` missing after `addPrompt` | Document creation failure |
 | Validation fails | Validation report |
 
-## 17. Notes for HTTP Clients
+---
 
-Use `Content-Type: application/json`.
+## 11. Schema Version
 
-Send POST body as raw JSON.
-
-Do not send prompt content through URL parameters.
-
-Large prompt content MUST be sent in the JSON body.
+Current: **1.1.0** — 8 sheets, 21 columns in Prompts, 29 Web App actions.
