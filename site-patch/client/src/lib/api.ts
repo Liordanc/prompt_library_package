@@ -1,9 +1,26 @@
 import axios from 'axios';
 import type { Prompt } from './data';
 
+function toHebrewError(raw: string): string {
+  if (!raw) return 'שגיאה לא ידועה';
+  if (raw.includes('GAS_WEB_APP_URL') || raw.includes('GAS_AGENT_TOKEN') || raw.includes('not configured'))
+    return 'השרת לא מוגדר — בדוק שקובץ .env מכיל GAS_WEB_APP_URL ו-GAS_AGENT_TOKEN';
+  if (raw.includes('INVALID_TOKEN') || raw.includes('Unauthorized') || raw.includes('token'))
+    return 'אימות נכשל — הטוקן ב-.env שגוי או פג תוקף';
+  if (raw.includes('fetch') || raw.includes('network') || raw.includes('ECONNREFUSED') || raw.includes('Failed to fetch'))
+    return 'אין חיבור לשרת — בדוק שהשרת פועל ויש גישה לאינטרנט';
+  if (raw.includes('NOT_FOUND') || raw.includes('not found'))
+    return 'הפריט לא נמצא';
+  if (raw.includes('DUPLICATE') || raw.includes('already exists'))
+    return 'פריט כזה כבר קיים';
+  if (raw.includes('VALIDATION') || raw.includes('validation') || raw.includes('required'))
+    return `שגיאת ולידציה: ${raw}`;
+  return raw;
+}
+
 async function callGas(action: string, payload: Record<string, unknown> = {}): Promise<unknown> {
   const { data } = await axios.post('/api/gas', { action, ...payload });
-  if (!data.ok) throw new Error(data.error || data.code || 'Request failed');
+  if (!data.ok) throw new Error(toHebrewError(data.error || data.code || 'Request failed'));
   return data.result;
 }
 

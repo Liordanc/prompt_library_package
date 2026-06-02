@@ -11,16 +11,35 @@ const GAS_TOKEN = process.env.GAS_AGENT_TOKEN || "";
 
 async function callGas(action: string, payload: Record<string, unknown> = {}) {
   if (!GAS_URL || !GAS_TOKEN) {
-    throw new Error("GAS_WEB_APP_URL or GAS_AGENT_TOKEN not configured in .env");
+    throw new Error("השרת לא מוגדר — חסרים GAS_WEB_APP_URL או GAS_AGENT_TOKEN בקובץ .env");
   }
-  const response = await fetch(GAS_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ token: GAS_TOKEN, action, ...payload }),
-  });
-  const text = await response.text();
-  const data = JSON.parse(text);
-  if (!data.ok) throw new Error(data.error || data.code || "GAS request failed");
+  let text: string;
+  try {
+    const response = await fetch(GAS_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token: GAS_TOKEN, action, ...payload }),
+    });
+    text = await response.text();
+  } catch (err) {
+    throw new Error(`אין חיבור ל-Google Apps Script — בדוק חיבור לאינטרנט (${String(err)})`);
+  }
+  let data: Record<string, unknown>;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    throw new Error(`תגובה לא תקינה מ-GAS — לא JSON: ${text.slice(0, 120)}`);
+  }
+  if (!data.ok) {
+    const raw = String(data.error || data.code || "");
+    if (raw.includes("INVALID_TOKEN") || raw.includes("Unauthorized"))
+      throw new Error("אימות נכשל — הטוקן ב-.env שגוי או פג תוקף");
+    if (raw.includes("NOT_FOUND"))
+      throw new Error("הפריט לא נמצא ב-Sheets");
+    if (raw.includes("DUPLICATE"))
+      throw new Error("פריט כזה כבר קיים (כפילות)");
+    throw new Error(raw || "בקשה ל-GAS נכשלה ללא פרטים");
+  }
   return data;
 }
 
@@ -35,11 +54,17 @@ async function startServer() {
   app.get("/api/health", async (_req, res) => {
     try {
       if (!GAS_URL) {
-        res.status(500).json({ ok: false, error: "GAS_WEB_APP_URL not configured" });
+        res.status(500).json({ ok: false, error: "השרת לא מוגדר — חסר GAS_WEB_APP_URL בקובץ .env" });
         return;
       }
-      const response = await fetch(`${GAS_URL}?action=healthCheck`);
-      const data = await response.json();
+      let data: unknown;
+      try {
+        const response = await fetch(`${GAS_URL}?action=healthCheck`);
+        data = await response.json();
+      } catch (err) {
+        res.status(500).json({ ok: false, error: `אין חיבור ל-GAS — בדוק חיבור לאינטרנט (${String(err)})` });
+        return;
+      }
       res.json(data);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
@@ -52,7 +77,7 @@ async function startServer() {
     try {
       const { action, ...payload } = req.body as { action: string; [key: string]: unknown };
       if (!action) {
-        res.status(400).json({ ok: false, error: "Missing action" });
+        res.status(400).json({ ok: false, error: "חסר שם פעולה (action) בבקשה" });
         return;
       }
       const data = await callGas(action, payload);

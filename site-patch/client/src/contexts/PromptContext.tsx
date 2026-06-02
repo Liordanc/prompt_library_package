@@ -39,7 +39,7 @@ export function PromptProvider({ children }: { children: React.ReactNode }) {
       .catch(err => {
         console.error('Failed to load prompts:', err);
         setError(err.message);
-        toast.error('שגיאה בטעינת הפרומפטים');
+        toast.error(`טעינת פרומפטים נכשלה: ${err.message}`);
       })
       .finally(() => setLoading(false));
   }, []);
@@ -71,26 +71,22 @@ export function PromptProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const archivePrompt = useCallback((id: string) => {
-    // Optimistic update
     setPrompts(prev => prev.map(p =>
       p.Prompt_ID === id ? { ...p, Status: 'Archived', Category: 'ארכיון', Updated_At: new Date().toISOString().split('T')[0] } : p
     ));
     api.archivePromptApi(id)
       .then(() => toast.success('הפרומפט הועבר לארכיון'))
       .catch(err => {
-        // Revert on failure
         loadPrompts();
         toast.error(`שגיאה בהעברה לארכיון: ${err.message}`);
       });
   }, [loadPrompts]);
 
   const toggleFavorite = useCallback((id: string) => {
-    // Optimistic update
     setPrompts(prev => prev.map(p =>
       p.Prompt_ID === id ? { ...p, Is_Favorite: !p.Is_Favorite } : p
     ));
     api.toggleFavoriteApi(id).catch(err => {
-      // Revert on failure
       setPrompts(prev => prev.map(p =>
         p.Prompt_ID === id ? { ...p, Is_Favorite: !p.Is_Favorite } : p
       ));
