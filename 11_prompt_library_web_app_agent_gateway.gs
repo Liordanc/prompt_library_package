@@ -24,7 +24,20 @@ const AGENT_GATEWAY_CONFIG = Object.freeze({
     "unmarkFavorite",
     "toggleFavorite",
     "archivePrompt",
-    "validatePrompt"
+    "validatePrompt",
+    "fillTemplate",
+    "getTemplateVariables",
+    "updatePromptContent",
+    "getPromptHistory",
+    "exportPrompts",
+    "importPrompts",
+    "ratePrompt",
+    "recordPromptUsage",
+    "getTopRatedPrompts",
+    "getMostUsedPrompts",
+    "getRecentlyUsedPrompts",
+    "filterPrompts",
+    "seedMockData"
   ]
 });
 
@@ -109,7 +122,27 @@ function dispatchAgentAction_(action, payload) {
     unmarkFavorite: () => unmarkPromptFavorite(requiredValue_(payload.promptId, "promptId")),
     toggleFavorite: () => togglePromptFavorite(requiredValue_(payload.promptId, "promptId")),
     archivePrompt: () => archivePrompt(requiredValue_(payload.promptId, "promptId")),
-    validatePrompt: () => validatePromptRecord(requiredValue_(payload.promptId, "promptId"))
+    validatePrompt: () => validatePromptRecord(requiredValue_(payload.promptId, "promptId")),
+    fillTemplate: () => fillTemplate(
+      requiredValue_(payload.promptId, "promptId"),
+      requiredValue_(payload.variables, "variables")
+    ),
+    getTemplateVariables: () => getTemplateVariables(requiredValue_(payload.promptId, "promptId")),
+    updatePromptContent: () => updatePromptContent(
+      requiredValue_(payload.promptId, "promptId"),
+      requiredValue_(payload.updates, "updates"),
+      payload.changeSummary || ""
+    ),
+    getPromptHistory: () => getPromptHistory(requiredValue_(payload.promptId, "promptId")),
+    exportPrompts: () => exportPromptsToJson(payload.includeArchived === true),
+    importPrompts: () => importPromptsFromJson(requiredValue_(payload.jsonString, "jsonString")),
+    ratePrompt: () => ratePrompt(requiredValue_(payload.promptId, "promptId"), requiredValue_(payload.rating, "rating")),
+    recordPromptUsage: () => recordPromptUsage(requiredValue_(payload.promptId, "promptId")),
+    getTopRatedPrompts: () => getTopRatedPrompts(payload.limit),
+    getMostUsedPrompts: () => getMostUsedPrompts(payload.limit),
+    getRecentlyUsedPrompts: () => getRecentlyUsedPrompts(payload.limit),
+    filterPrompts: () => filterPrompts(payload.criteria || {}),
+    seedMockData: () => seedMockData()
   };
 
   const handler = actionMap[action];

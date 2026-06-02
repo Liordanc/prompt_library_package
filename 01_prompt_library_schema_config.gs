@@ -1,5 +1,5 @@
 const PROMPT_LIBRARY_SCHEMA = Object.freeze({
-  version: "1.0.0",
+  version: "1.1.0",
   locale: "iw_IL",
   timezone: "Asia/Jerusalem",
 
@@ -22,7 +22,8 @@ const PROMPT_LIBRARY_SCHEMA = Object.freeze({
       category: "CAT",
       subcategory: "SUB",
       tag: "TAG",
-      log: "LOG"
+      log: "LOG",
+      version: "VER"
     }
   },
 
@@ -57,7 +58,11 @@ const PROMPT_LIBRARY_SCHEMA = Object.freeze({
         { key: "Created_At", label: "Created_At", type: "DateTime", required: true, unique: false, editable: false, defaultValue: "{{now}}" },
         { key: "Updated_At", label: "Updated_At", type: "DateTime", required: true, unique: false, editable: false, defaultValue: "{{now}}" },
         { key: "Source", label: "Source", type: "Text", required: false, unique: false, editable: true, defaultValue: null },
-        { key: "Notes", label: "Notes", type: "LongText", required: false, unique: false, editable: true, defaultValue: null }
+        { key: "Notes", label: "Notes", type: "LongText", required: false, unique: false, editable: true, defaultValue: null },
+        { key: "Variables", label: "Variables", type: "LongText", required: false, unique: false, editable: true, defaultValue: null },
+        { key: "Rating", label: "Rating", type: "Number", required: false, unique: false, editable: true, defaultValue: null },
+        { key: "Use_Count", label: "Use_Count", type: "Number", required: false, unique: false, editable: false, defaultValue: 0 },
+        { key: "Last_Used_At", label: "Last_Used_At", type: "DateTime", required: false, unique: false, editable: false, defaultValue: null }
       ]
     },
     {
@@ -199,6 +204,20 @@ const PROMPT_LIBRARY_SCHEMA = Object.freeze({
         { key: "Entity_ID", label: "Entity_ID", type: "Text", required: false, unique: false, editable: false, defaultValue: null },
         { key: "Status", label: "Status", type: "Enum", required: true, unique: false, editable: false, allowedValuesRef: "controlledValues.logStatus", defaultValue: null },
         { key: "Message", label: "Message", type: "LongText", required: false, unique: false, editable: false, defaultValue: null }
+      ]
+    },
+    {
+      sheetName: "PromptVersions",
+      required: true,
+      sortOrder: 8,
+      freezeRows: 1,
+      columns: [
+        { key: "Version_ID", label: "Version_ID", type: "Text", required: true, unique: true, editable: false, defaultValue: null },
+        { key: "Prompt_ID", label: "Prompt_ID", type: "Text", required: true, unique: false, editable: false, defaultValue: null },
+        { key: "Version", label: "Version", type: "Text", required: true, unique: false, editable: false, defaultValue: null },
+        { key: "Snapshot_JSON", label: "Snapshot_JSON", type: "LongText", required: true, unique: false, editable: false, defaultValue: null },
+        { key: "Saved_At", label: "Saved_At", type: "DateTime", required: true, unique: false, editable: false, defaultValue: "{{now}}" },
+        { key: "Change_Summary", label: "Change_Summary", type: "Text", required: false, unique: false, editable: false, defaultValue: null }
       ]
     }
   ],

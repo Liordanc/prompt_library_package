@@ -135,8 +135,142 @@ function getFavoritePrompts() {
   return findPromptRecords("").filter(record => parseBoolean_(record.Is_Favorite));
 }
 
+function filterPrompts(criteria) {
+  var all = findPromptRecords("");
+  var c = criteria || {};
+
+  return all.filter(function(r) {
+    if (c.category && String(r.Category || "").trim() !== String(c.category).trim()) return false;
+    if (c.subcategory && String(r.Subcategory || "").trim() !== String(c.subcategory).trim()) return false;
+    if (c.status && String(r.Status || "").trim() !== String(c.status).trim()) return false;
+    if (c.promptType && String(r.Prompt_Type || "").trim() !== String(c.promptType).trim()) return false;
+    if (c.toolTarget && String(r.Tool_Target || "").trim() !== String(c.toolTarget).trim()) return false;
+    if (c.isFavorite === true && !parseBoolean_(r.Is_Favorite)) return false;
+    if (c.minRating && (isNaN(Number(r.Rating)) || Number(r.Rating) < Number(c.minRating))) return false;
+    if (c.query) {
+      var q = String(c.query).toLowerCase();
+      var text = [r.Title, r.Description, r.Tags, r.Notes, r.Source].join(" ").toLowerCase();
+      if (!text.includes(q)) return false;
+    }
+    return true;
+  });
+}
+
 function archivePrompt(promptId) {
   return updatePromptRecord(promptId, { Status: "Archived" });
+}
+
+// ─── Rating & Usage Tracking ───────────────────────────────────────────────
+
+function ratePrompt(promptId, rating) {
+  var r = Number(rating);
+  if (isNaN(r) || r < 1 || r > 5) throw new Error("Rating must be a number between 1 and 5");
+  var result = updatePromptRecord(promptId, { Rating: r });
+  logAction("RATE_PROMPT", "Prompt", promptId, "Success", "Rated: " + r);
+  return result;
+}
+
+function recordPromptUsage(promptId) {
+  var record = getPromptRecordById(promptId);
+  if (!record) throw new Error("Prompt not found: " + promptId);
+  var currentCount = Number(record.Use_Count) || 0;
+  var result = updatePromptRecord(promptId, { Use_Count: currentCount + 1, Last_Used_At: new Date() });
+  logAction("RECORD_PROMPT_USAGE", "Prompt", promptId, "Success", "Use count: " + (currentCount + 1));
+  return result;
+}
+
+function getTopRatedPrompts(limit) {
+  var n = Number(limit) || 10;
+  return findPromptRecords("").filter(function(r) { return Number(r.Rating) > 0; })
+    .sort(function(a, b) { return Number(b.Rating) - Number(a.Rating); })
+    .slice(0, n);
+}
+
+function getMostUsedPrompts(limit) {
+  var n = Number(limit) || 10;
+  return findPromptRecords("").filter(function(r) { return Number(r.Use_Count) > 0; })
+    .sort(function(a, b) { return Number(b.Use_Count) - Number(a.Use_Count); })
+    .slice(0, n);
+}
+
+function getRecentlyUsedPrompts(limit) {
+  var n = Number(limit) || 10;
+  return findPromptRecords("").filter(function(r) { return r.Last_Used_At && String(r.Last_Used_At).trim() !== ""; })
+    .sort(function(a, b) { return new Date(b.Last_Used_At) - new Date(a.Last_Used_At); })
+    .slice(0, n);
+}
+
+// ─── Export / Import ───────────────────────────────────────────────────────
+
+function exportPromptsToJson(includeArchived) {
+  const all = findPromptRecords("");
+  const records = includeArchived
+    ? all
+    : all.filter(function(r) { return String(r.Status || "").trim() !== "Archived"; });
+
+  const exportData = records.map(function(r) {
+    return {
+      Title: r.Title,
+      Category: r.Category,
+      Subcategory: r.Subcategory,
+      Description: r.Description,
+      Tags: r.Tags,
+      Is_Favorite: r.Is_Favorite,
+      Tool_Target: r.Tool_Target,
+      Prompt_Type: r.Prompt_Type,
+      Status: r.Status,
+      Source: r.Source,
+      Notes: r.Notes,
+      Variables: r.Variables,
+      _original_Prompt_ID: r.Prompt_ID,
+      _original_Full_Doc_Link: r.Full_Doc_Link,
+      _exported_at: new Date().toISOString()
+    };
+  });
+
+  const jsonString = JSON.stringify(exportData, null, 2);
+  const docName = "Prompt Library Export - " + Utilities.formatDate(new Date(), PROMPT_LIBRARY_SCHEMA.timezone, "yyyy-MM-dd HH:mm");
+  const doc = DocumentApp.create(docName);
+  doc.getBody().appendParagraph(jsonString);
+  doc.saveAndClose();
+
+  logAction("EXPORT_PROMPTS", "Workbook", SpreadsheetApp.getActiveSpreadsheet().getId(), "Success",
+    "Exported " + exportData.length + " prompts to: " + doc.getUrl());
+
+  return { ok: true, count: exportData.length, documentUrl: doc.getUrl(), documentName: docName };
+}
+
+function importPromptsFromJson(jsonString) {
+  var items;
+  try {
+    items = JSON.parse(jsonString);
+    if (!Array.isArray(items)) throw new Error("JSON must be an array of prompts");
+  } catch (e) {
+    throw new Error("Invalid JSON: " + e.message);
+  }
+
+  var results = { total: items.length, succeeded: 0, failed: 0, errors: [] };
+
+  items.forEach(function(item, index) {
+    try {
+      var importData = Object.assign({}, item);
+      delete importData._original_Prompt_ID;
+      delete importData._original_Full_Doc_Link;
+      delete importData._exported_at;
+      addPrompt(importData);
+      results.succeeded++;
+    } catch (e) {
+      results.failed++;
+      results.errors.push({ index: index, title: item.Title || "(no title)", error: e.message });
+    }
+  });
+
+  logAction("IMPORT_PROMPTS", "Workbook", SpreadsheetApp.getActiveSpreadsheet().getId(),
+    results.failed === 0 ? "Success" : "Warning",
+    "Imported: " + results.succeeded + "/" + results.total + ", Failed: " + results.failed);
+
+  results.ok = results.failed === 0;
+  return results;
 }
 
 function deprecatePrompt(promptId) {
@@ -220,7 +354,11 @@ function normalizePromptData_(promptData) {
     Created_At: promptData.Created_At || now,
     Updated_At: promptData.Updated_At || now,
     Source: String(promptData.Source || "").trim(),
-    Notes: String(promptData.Notes || "").trim()
+    Notes: String(promptData.Notes || "").trim(),
+    Variables: serializeVariables_(promptData.Variables),
+    Rating: promptData.Rating ? Number(promptData.Rating) : "",
+    Use_Count: Number(promptData.Use_Count) || 0,
+    Last_Used_At: promptData.Last_Used_At || ""
   };
 }
 
@@ -289,4 +427,180 @@ function parseBoolean_(value) {
   }
 
   return false;
+}
+
+// ─── Versioning System ────────────────────────────────────────────────────
+
+function updatePromptContent(promptId, updates, changeSummary) {
+  saveVersionSnapshot_(promptId, changeSummary || "Content updated");
+
+  const record = getPromptRecordById(promptId);
+  const nextVersion = incrementVersion_(record.Version);
+
+  const result = updatePromptRecord(promptId, Object.assign({}, updates, { Version: nextVersion }));
+
+  logAction("UPDATE_PROMPT_CONTENT", "Prompt", promptId, "Success", `Updated to ${nextVersion}: ${changeSummary || ""}`);
+
+  return result;
+}
+
+function getPromptHistory(promptId) {
+  const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = spreadsheet.getSheetByName("PromptVersions");
+
+  if (!sheet) return [];
+
+  const headers = getHeaderRow_(sheet);
+  const lastRow = sheet.getLastRow();
+
+  if (lastRow < 2) return [];
+
+  const values = sheet.getRange(2, 1, lastRow - 1, headers.length).getValues();
+
+  return values
+    .map(row => objectFromHeaders_(headers, row))
+    .filter(record => String(record.Prompt_ID).trim() === String(promptId).trim())
+    .sort((a, b) => new Date(b.Saved_At) - new Date(a.Saved_At));
+}
+
+function saveVersionSnapshot_(promptId, changeSummary) {
+  const record = getPromptRecordById(promptId);
+  if (!record) throw new Error(`Prompt not found: ${promptId}`);
+
+  const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = spreadsheet.getSheetByName("PromptVersions");
+
+  if (!sheet) throw new Error("PromptVersions sheet does not exist");
+
+  const versionId = createId_(PROMPT_LIBRARY_SCHEMA.settings.idPrefixes.version);
+
+  sheet.appendRow([versionId, promptId, record.Version, JSON.stringify(record), new Date(), changeSummary || ""]);
+
+  logAction("SAVE_VERSION_SNAPSHOT", "Prompt", promptId, "Success", `Snapshot saved: ${record.Version}`);
+
+  return { versionId, promptId, version: record.Version };
+}
+
+function incrementVersion_(currentVersion) {
+  const text = String(currentVersion || PROMPT_LIBRARY_SCHEMA.settings.defaultVersion);
+  const match = text.match(/^v?(\d+)\.(\d+)$/);
+  if (!match) return text;
+  return `v${match[1]}.${parseInt(match[2], 10) + 1}`;
+}
+
+// ─── Template System ───────────────────────────────────────────────────────
+
+function fillTemplate(promptId, valuesMap) {
+  const record = getPromptRecordById(promptId);
+  if (!record) throw new Error(`Prompt not found: ${promptId}`);
+
+  const fullText = getPromptFullText_(promptId);
+  const usedVars = extractVariables_(fullText);
+
+  if (usedVars.length === 0) {
+    return { promptId, filledText: fullText, variables: [], substitutions: 0 };
+  }
+
+  const missing = usedVars.filter(v => valuesMap[v] === undefined || valuesMap[v] === null);
+  if (missing.length > 0) {
+    throw new Error(`Missing values for variables: ${missing.join(", ")}`);
+  }
+
+  let filledText = fullText;
+  usedVars.forEach(varName => {
+    filledText = filledText.replace(
+      new RegExp("\\{\\{" + escapeRegex_(varName) + "\\}\\}", "g"),
+      String(valuesMap[varName])
+    );
+  });
+
+  logAction("FILL_TEMPLATE", "Prompt", promptId, "Success", `Template filled: ${usedVars.length} variables`);
+
+  return { promptId, filledText, variables: usedVars, substitutions: usedVars.length };
+}
+
+function getTemplateVariables(promptId) {
+  const record = getPromptRecordById(promptId);
+  if (!record) throw new Error(`Prompt not found: ${promptId}`);
+
+  const fullText = getPromptFullText_(promptId);
+  const usedVars = extractVariables_(fullText);
+  const definedVars = parseVariables_(record.Variables);
+
+  return {
+    promptId,
+    isTemplate: usedVars.length > 0,
+    usedVars,
+    definedVars,
+    allDeclared: usedVars.every(v => definedVars.some(d => d.name === v))
+  };
+}
+
+function getPromptFullText_(promptId) {
+  const record = getPromptRecordById(promptId);
+  if (!record || !record.Full_Doc_Link) return String(record ? record.Preview_Text || "" : "");
+
+  try {
+    const documentId = extractDocumentIdFromUrl_(record.Full_Doc_Link);
+    const body = DocumentApp.openById(documentId).getBody();
+    const paragraphs = body.getParagraphs();
+    const lines = [];
+    let inSection = false;
+
+    for (const para of paragraphs) {
+      const isHeading2 = para.getHeading() === DocumentApp.ParagraphHeading.HEADING2;
+      const text = para.getText().trim();
+
+      if (isHeading2 && text === "Current Prompt") { inSection = true; continue; }
+      if (inSection && isHeading2) break;
+      if (inSection) lines.push(para.getText());
+    }
+
+    const result = lines.join("\n").trim();
+    return result || String(record.Preview_Text || "");
+  } catch (e) {
+    logError("GET_PROMPT_FULL_TEXT", "Prompt", promptId, e.message);
+    return String(record.Preview_Text || "");
+  }
+}
+
+function extractVariables_(text) {
+  const matches = String(text || "").match(/\{\{([^}]+)\}\}/g) || [];
+  return [...new Set(matches.map(m => m.replace(/^\{\{|\}\}$/g, "").trim()))];
+}
+
+function validateTemplateVariables_(promptData) {
+  const text = String(promptData.Full_Prompt || promptData.Preview_Text || "");
+  const usedVars = extractVariables_(text);
+
+  if (usedVars.length === 0) {
+    return { ok: true, usedVars: [], definedVars: [], undeclared: [] };
+  }
+
+  const definedVars = parseVariables_(promptData.Variables).map(v => v.name);
+  const undeclared = usedVars.filter(v => !definedVars.includes(v));
+
+  return { ok: undeclared.length === 0, usedVars, definedVars, undeclared };
+}
+
+function parseVariables_(value) {
+  if (!value) return [];
+  if (Array.isArray(value)) return value;
+  try {
+    const parsed = JSON.parse(String(value));
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function serializeVariables_(variables) {
+  if (!variables) return "";
+  if (typeof variables === "string") return variables;
+  if (Array.isArray(variables)) return variables.length > 0 ? JSON.stringify(variables) : "";
+  return "";
+}
+
+function escapeRegex_(str) {
+  return String(str).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }

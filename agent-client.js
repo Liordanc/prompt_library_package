@@ -119,6 +119,62 @@ async function validatePrompt(promptId) {
   return callPromptLibrary("validatePrompt", { promptId });
 }
 
+// ─── Template System ───────────────────────────────────────────────────────
+
+async function fillTemplate(promptId, variables) {
+  return callPromptLibrary("fillTemplate", { promptId, variables });
+}
+
+async function getTemplateVariables(promptId) {
+  return callPromptLibrary("getTemplateVariables", { promptId });
+}
+
+// ─── Versioning ────────────────────────────────────────────────────────────
+
+async function updatePromptContent(promptId, updates, changeSummary = "") {
+  return callPromptLibrary("updatePromptContent", { promptId, updates, changeSummary });
+}
+
+async function getPromptHistory(promptId) {
+  return callPromptLibrary("getPromptHistory", { promptId });
+}
+
+// ─── Export / Import ───────────────────────────────────────────────────────
+
+async function exportPrompts(includeArchived = false) {
+  return callPromptLibrary("exportPrompts", { includeArchived });
+}
+
+async function importPrompts(jsonString) {
+  return callPromptLibrary("importPrompts", { jsonString });
+}
+
+// ─── Rating & Usage ────────────────────────────────────────────────────────
+
+async function ratePrompt(promptId, rating) {
+  return callPromptLibrary("ratePrompt", { promptId, rating });
+}
+
+async function recordPromptUsage(promptId) {
+  return callPromptLibrary("recordPromptUsage", { promptId });
+}
+
+async function getTopRatedPrompts(limit = 10) {
+  return callPromptLibrary("getTopRatedPrompts", { limit });
+}
+
+async function getMostUsedPrompts(limit = 10) {
+  return callPromptLibrary("getMostUsedPrompts", { limit });
+}
+
+async function getRecentlyUsedPrompts(limit = 10) {
+  return callPromptLibrary("getRecentlyUsedPrompts", { limit });
+}
+
+async function filterPrompts(criteria = {}) {
+  return callPromptLibrary("filterPrompts", { criteria });
+}
+
 async function runInstallSequence() {
   const steps = [
     ["healthCheck", healthCheck],
@@ -188,6 +244,18 @@ module.exports = {
   toggleFavorite,
   archivePrompt,
   validatePrompt,
+  fillTemplate,
+  getTemplateVariables,
+  updatePromptContent,
+  getPromptHistory,
+  exportPrompts,
+  importPrompts,
+  ratePrompt,
+  recordPromptUsage,
+  getTopRatedPrompts,
+  getMostUsedPrompts,
+  getRecentlyUsedPrompts,
+  filterPrompts,
   runInstallSequence
 };
 

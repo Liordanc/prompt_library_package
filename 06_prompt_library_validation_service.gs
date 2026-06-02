@@ -114,6 +114,11 @@ function validatePromptRecordShape_(record) {
     errors.push("Is_Favorite is not a valid boolean value");
   }
 
+  if (!isBlank_(record.Rating)) {
+    const r = Number(record.Rating);
+    if (isNaN(r) || r < 1 || r > 5) errors.push("Rating must be between 1 and 5");
+  }
+
   return {
     ok: errors.length === 0,
     promptId: record.Prompt_ID || "",

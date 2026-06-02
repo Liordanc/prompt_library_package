@@ -85,6 +85,318 @@ function runPromptLibraryMigrationInspectionTest() {
   return buildTestSummary_("runPromptLibraryMigrationInspectionTest", results);
 }
 
+function runPromptLibraryRatingAndFilterTest() {
+  const results = [];
+
+  const promptData = {
+    Title: "Test Rating Prompt",
+    Category: "כללי",
+    Subcategory: "לבדיקה",
+    Description: "Prompt for rating and filter tests",
+    Full_Prompt: "Test content for rating.",
+    Prompt_Type: "General",
+    Status: "Active",
+    Source: "Test Runner"
+  };
+
+  let promptId = null;
+
+  results.push(runTest_("addPromptForRating", () => {
+    const record = addPrompt(promptData);
+    promptId = record.Prompt_ID;
+    return { promptId };
+  }));
+
+  if (promptId) {
+    results.push(runTest_("ratePrompt_valid", () => {
+      const r = ratePrompt(promptId, 4);
+      if (Number(r.Rating) !== 4) throw new Error("Expected Rating=4, got " + r.Rating);
+      return { rating: r.Rating };
+    }));
+
+    results.push(runTest_("ratePrompt_outOfRange", () => {
+      try {
+        ratePrompt(promptId, 6);
+        throw new Error("Should have thrown for rating=6");
+      } catch (e) {
+        if (!e.message.includes("1 and 5")) throw new Error("Wrong error: " + e.message);
+        return { caught: e.message };
+      }
+    }));
+
+    results.push(runTest_("recordPromptUsage", () => {
+      const r = recordPromptUsage(promptId);
+      if (Number(r.Use_Count) < 1) throw new Error("Use_Count should be >= 1");
+      return { useCount: r.Use_Count };
+    }));
+
+    results.push(runTest_("filterPrompts_byStatus", () => {
+      const filtered = filterPrompts({ status: "Active" });
+      if (!Array.isArray(filtered)) throw new Error("filterPrompts should return an array");
+      if (filtered.some(r => String(r.Status) !== "Active")) throw new Error("Filter returned non-Active records");
+      return { count: filtered.length };
+    }));
+
+    results.push(runTest_("filterPrompts_byCategory", () => {
+      const filtered = filterPrompts({ category: "כללי" });
+      if (filtered.some(r => String(r.Category).trim() !== "כללי")) throw new Error("Filter returned wrong category");
+      return { count: filtered.length };
+    }));
+
+    results.push(runTest_("filterPrompts_byMinRating", () => {
+      const filtered = filterPrompts({ minRating: 4 });
+      if (filtered.some(r => Number(r.Rating) < 4)) throw new Error("Filter returned records below minRating");
+      return { count: filtered.length };
+    }));
+
+    results.push(runTest_("getTopRatedPrompts", () => {
+      const top = getTopRatedPrompts(5);
+      if (!Array.isArray(top)) throw new Error("Expected array");
+      return { count: top.length };
+    }));
+
+    results.push(runTest_("getMostUsedPrompts", () => {
+      const used = getMostUsedPrompts(5);
+      if (!Array.isArray(used)) throw new Error("Expected array");
+      return { count: used.length };
+    }));
+  }
+
+  return buildTestSummary_("runPromptLibraryRatingAndFilterTest", results);
+}
+
+function runPromptLibraryExportImportTest() {
+  const results = [];
+
+  results.push(runTest_("exportPromptsToJson", () => {
+    const result = exportPromptsToJson(false);
+    if (!result.ok) throw new Error("Export failed");
+    if (typeof result.count !== "number") throw new Error("Expected count in result");
+    if (!result.documentUrl) throw new Error("Expected documentUrl in result");
+    return { count: result.count, hasUrl: Boolean(result.documentUrl) };
+  }));
+
+  const sampleJson = JSON.stringify([{
+    Title: "Imported Test Prompt",
+    Category: "כללי",
+    Subcategory: "לבדיקה",
+    Full_Prompt: "Imported prompt content.",
+    Prompt_Type: "General",
+    Status: "Draft",
+    Source: "Import Test"
+  }]);
+
+  results.push(runTest_("importPromptsFromJson_valid", () => {
+    const result = importPromptsFromJson(sampleJson);
+    if (!result.ok) throw new Error("Import failed: " + JSON.stringify(result.errors));
+    if (result.succeeded !== 1) throw new Error("Expected 1 imported, got " + result.succeeded);
+    return result;
+  }));
+
+  results.push(runTest_("importPromptsFromJson_invalidJson", () => {
+    try {
+      importPromptsFromJson("not valid json {{{");
+      throw new Error("Should have thrown for invalid JSON");
+    } catch (e) {
+      if (!e.message.includes("Invalid JSON")) throw new Error("Wrong error: " + e.message);
+      return { caught: e.message };
+    }
+  }));
+
+  results.push(runTest_("importPromptsFromJson_notArray", () => {
+    try {
+      importPromptsFromJson('{"Title":"not an array"}');
+      throw new Error("Should have thrown for non-array");
+    } catch (e) {
+      if (!e.message.includes("array")) throw new Error("Wrong error: " + e.message);
+      return { caught: e.message };
+    }
+  }));
+
+  return buildTestSummary_("runPromptLibraryExportImportTest", results);
+}
+
+function runPromptLibraryVersioningTest() {
+  const results = [];
+
+  results.push(runTest_("incrementVersion_basic", () => {
+    const next = incrementVersion_("v1.0");
+    if (next !== "v1.1") throw new Error(`Expected v1.1, got ${next}`);
+    return next;
+  }));
+
+  results.push(runTest_("incrementVersion_two_digits", () => {
+    const next = incrementVersion_("v1.9");
+    if (next !== "v1.10") throw new Error(`Expected v1.10, got ${next}`);
+    return next;
+  }));
+
+  results.push(runTest_("incrementVersion_unknown_format", () => {
+    const next = incrementVersion_("custom-version");
+    if (next !== "custom-version") throw new Error(`Expected unchanged, got ${next}`);
+    return next;
+  }));
+
+  const basePromptData = {
+    Title: "Test Versioning Prompt",
+    Category: "כללי",
+    Subcategory: "לבדיקה",
+    Description: "Prompt for versioning test",
+    Full_Prompt: "Original content.",
+    Tags: ["versioning", "test"],
+    Prompt_Type: "General",
+    Status: "Draft",
+    Source: "Test Runner"
+  };
+
+  let createdPromptId = null;
+
+  results.push(runTest_("addPromptForVersioning", () => {
+    const record = addPrompt(basePromptData);
+    createdPromptId = record.Prompt_ID;
+    if (record.Version !== "v1.0") throw new Error(`Expected v1.0, got ${record.Version}`);
+    return { promptId: createdPromptId, version: record.Version };
+  }));
+
+  if (createdPromptId) {
+    results.push(runTest_("updatePromptContent_incrementsVersion", () => {
+      const updated = updatePromptContent(createdPromptId, { Description: "Updated description" }, "First update");
+      if (updated.Version !== "v1.1") throw new Error(`Expected v1.1, got ${updated.Version}`);
+      return { version: updated.Version };
+    }));
+
+    results.push(runTest_("getPromptHistory_hasSnapshot", () => {
+      const history = getPromptHistory(createdPromptId);
+      if (history.length < 1) throw new Error("Expected at least 1 snapshot in history");
+      if (history[0].Prompt_ID !== createdPromptId) throw new Error("Snapshot Prompt_ID mismatch");
+      return { snapshots: history.length, latestVersion: history[0].Version };
+    }));
+
+    results.push(runTest_("updatePromptContent_secondUpdate", () => {
+      const updated = updatePromptContent(createdPromptId, { Description: "Second update" }, "Second update");
+      if (updated.Version !== "v1.2") throw new Error(`Expected v1.2, got ${updated.Version}`);
+      return { version: updated.Version };
+    }));
+
+    results.push(runTest_("getPromptHistory_twoSnapshots", () => {
+      const history = getPromptHistory(createdPromptId);
+      if (history.length < 2) throw new Error(`Expected 2+ snapshots, got ${history.length}`);
+      return { snapshots: history.length };
+    }));
+  }
+
+  return buildTestSummary_("runPromptLibraryVersioningTest", results);
+}
+
+function runPromptLibraryTemplateTest() {
+  const results = [];
+
+  results.push(runTest_("extractVariables_basic", () => {
+    const vars = extractVariables_("Hello {{name}}, you are {{age}} years old.");
+    if (vars.length !== 2 || !vars.includes("name") || !vars.includes("age")) {
+      throw new Error(`Expected [name, age], got: ${JSON.stringify(vars)}`);
+    }
+    return vars;
+  }));
+
+  results.push(runTest_("extractVariables_empty", () => {
+    const vars = extractVariables_("No variables here.");
+    if (vars.length !== 0) throw new Error(`Expected [], got: ${JSON.stringify(vars)}`);
+    return vars;
+  }));
+
+  results.push(runTest_("extractVariables_deduplicate", () => {
+    const vars = extractVariables_("{{lang}} and {{lang}} again");
+    if (vars.length !== 1) throw new Error(`Expected 1 unique var, got: ${JSON.stringify(vars)}`);
+    return vars;
+  }));
+
+  results.push(runTest_("parseVariables_array", () => {
+    const vars = parseVariables_([{ name: "x", default: "y" }]);
+    if (!Array.isArray(vars) || vars[0].name !== "x") throw new Error("parseVariables_ failed for array input");
+    return vars;
+  }));
+
+  results.push(runTest_("parseVariables_json_string", () => {
+    const vars = parseVariables_('[{"name":"x","default":"y"}]');
+    if (!Array.isArray(vars) || vars[0].name !== "x") throw new Error("parseVariables_ failed for JSON string");
+    return vars;
+  }));
+
+  results.push(runTest_("validateTemplateVariables_ok", () => {
+    const result = validateTemplateVariables_({
+      Full_Prompt: "Review {{language}} code",
+      Variables: [{ name: "language", description: "lang", default: "JS" }]
+    });
+    if (!result.ok) throw new Error(`Validation should pass: ${JSON.stringify(result)}`);
+    return result;
+  }));
+
+  results.push(runTest_("validateTemplateVariables_undeclared", () => {
+    const result = validateTemplateVariables_({
+      Full_Prompt: "Review {{language}} code for {{focus}}",
+      Variables: [{ name: "language", description: "lang", default: "JS" }]
+    });
+    if (result.ok) throw new Error("Validation should fail for undeclared variable");
+    if (!result.undeclared.includes("focus")) throw new Error("Should report 'focus' as undeclared");
+    return result;
+  }));
+
+  const templateData = {
+    Title: "Test Template - Code Review",
+    Category: "כתיבת פרומפטים",
+    Subcategory: "פרומפט תבנית",
+    Description: "Test template with variable substitution",
+    Full_Prompt: "Review the following {{language}} code and check for {{focus_area}} issues.",
+    Variables: JSON.stringify([
+      { name: "language", description: "שפת תכנות", default: "JavaScript" },
+      { name: "focus_area", description: "מוקד הבדיקה", default: "security" }
+    ]),
+    Tags: ["template", "test"],
+    Prompt_Type: "Template",
+    Status: "Draft",
+    Source: "Test Runner"
+  };
+
+  let createdPromptId = null;
+
+  results.push(runTest_("addTemplatePrompt", () => {
+    const record = addPrompt(templateData);
+    createdPromptId = record.Prompt_ID;
+    if (!createdPromptId) throw new Error("No Prompt_ID returned");
+    return { promptId: createdPromptId };
+  }));
+
+  if (createdPromptId) {
+    results.push(runTest_("getTemplateVariables", () => {
+      const result = getTemplateVariables(createdPromptId);
+      if (!result.isTemplate) throw new Error("Should be detected as template");
+      if (result.usedVars.length !== 2) throw new Error(`Expected 2 vars, got: ${result.usedVars.length}`);
+      return result;
+    }));
+
+    results.push(runTest_("fillTemplate_success", () => {
+      const result = fillTemplate(createdPromptId, { language: "Python", focus_area: "performance" });
+      if (!result.filledText.includes("Python")) throw new Error("Variable 'language' not substituted");
+      if (!result.filledText.includes("performance")) throw new Error("Variable 'focus_area' not substituted");
+      if (result.filledText.includes("{{")) throw new Error("Unfilled variables remain in text");
+      return result;
+    }));
+
+    results.push(runTest_("fillTemplate_missingVariable", () => {
+      try {
+        fillTemplate(createdPromptId, { language: "Python" });
+        throw new Error("Should have thrown for missing variable 'focus_area'");
+      } catch (e) {
+        if (!e.message.includes("focus_area")) throw new Error(`Wrong error: ${e.message}`);
+        return { caught: e.message };
+      }
+    }));
+  }
+
+  return buildTestSummary_("runPromptLibraryTemplateTest", results);
+}
+
 function runPromptLibraryFullTestSuite() {
   const suites = [];
 
@@ -92,6 +404,10 @@ function runPromptLibraryFullTestSuite() {
   suites.push(runPromptLibraryTaxonomyTest());
   suites.push(runPromptLibraryValidationTest());
   suites.push(runPromptLibraryMigrationInspectionTest());
+  suites.push(runPromptLibraryVersioningTest());
+  suites.push(runPromptLibraryTemplateTest());
+  suites.push(runPromptLibraryRatingAndFilterTest());
+  suites.push(runPromptLibraryExportImportTest());
 
   const summary = {
     suiteName: "runPromptLibraryFullTestSuite",

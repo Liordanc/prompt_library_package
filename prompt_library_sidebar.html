@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, sans-serif; font-size: 13px; color: #202124; background: #fff; }
+
+  .header { background: #1a73e8; color: #fff; padding: 12px 16px; font-size: 14px; font-weight: bold; }
+
+  .form-body { padding: 12px 16px; }
+
+  .field { margin-bottom: 12px; }
+  label { display: block; font-size: 11px; font-weight: bold; color: #5f6368; margin-bottom: 4px; text-transform: uppercase; }
+  label .req { color: #d93025; }
+
+  input[type="text"], textarea, select {
+    width: 100%; border: 1px solid #dadce0; border-radius: 4px;
+    padding: 6px 8px; font-size: 13px; color: #202124;
+    outline: none; resize: vertical;
+  }
+  input[type="text"]:focus, textarea:focus, select:focus { border-color: #1a73e8; }
+  textarea { min-height: 80px; }
+  #full_prompt { min-height: 120px; }
+
+  .row-2 { display: flex; gap: 8px; }
+  .row-2 .field { flex: 1; }
+
+  .checkbox-row { display: flex; align-items: center; gap: 8px; }
+  .checkbox-row input { width: auto; }
+
+  #variables-section { background: #f8f9fa; border: 1px solid #dadce0; border-radius: 4px; padding: 10px; margin-bottom: 12px; }
+  #variables-section h4 { font-size: 11px; font-weight: bold; color: #5f6368; text-transform: uppercase; margin-bottom: 8px; }
+  .var-row { display: flex; gap: 6px; margin-bottom: 6px; align-items: flex-start; }
+  .var-row input { flex: 1; }
+  .var-row button { background: none; border: none; color: #d93025; cursor: pointer; font-size: 16px; padding: 4px; line-height: 1; }
+  #add-var-btn { font-size: 12px; color: #1a73e8; background: none; border: none; cursor: pointer; padding: 4px 0; }
+
+  .actions { display: flex; gap: 8px; padding: 12px 16px; border-top: 1px solid #dadce0; background: #f8f9fa; }
+  button.primary { flex: 1; background: #1a73e8; color: #fff; border: none; border-radius: 4px; padding: 8px; font-size: 13px; cursor: pointer; font-weight: bold; }
+  button.primary:hover { background: #1557b0; }
+  button.secondary { flex: 1; background: #fff; color: #5f6368; border: 1px solid #dadce0; border-radius: 4px; padding: 8px; font-size: 13px; cursor: pointer; }
+
+  #status-bar { padding: 8px 16px; font-size: 12px; display: none; }
+  #status-bar.success { background: #e6f4ea; color: #137333; display: block; }
+  #status-bar.error { background: #fce8e6; color: #c5221f; display: block; }
+  #status-bar.loading { background: #e8f0fe; color: #1a73e8; display: block; }
+</style>
+</head>
+<body>
+
+<div class="header">➕ Add New Prompt</div>
+
+<div id="status-bar"></div>
+
+<div class="form-body">
+
+  <div class="field">
+    <label>Title <span class="req">*</span></label>
+    <input type="text" id="title" placeholder="Short descriptive title">
+  </div>
+
+  <div class="row-2">
+    <div class="field">
+      <label>Category <span class="req">*</span></label>
+      <select id="category" onchange="onCategoryChange()">
+        <option value="">— Loading —</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Subcategory</label>
+      <select id="subcategory">
+        <option value="">— Select category first —</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="field">
+    <label>Description</label>
+    <textarea id="description" rows="2" placeholder="What does this prompt do?"></textarea>
+  </div>
+
+  <div class="field">
+    <label>Full Prompt <span class="req">*</span></label>
+    <textarea id="full_prompt" placeholder="Write the full prompt here. Use {{variable}} for template variables."></textarea>
+  </div>
+
+  <div id="variables-section" style="display:none">
+    <h4>Template Variables</h4>
+    <div id="vars-list"></div>
+    <button id="add-var-btn" onclick="addVarRow()">+ Add Variable</button>
+  </div>
+
+  <div class="row-2">
+    <div class="field">
+      <label>Prompt Type <span class="req">*</span></label>
+      <select id="prompt_type" onchange="onPromptTypeChange()">
+        <option value="General">General</option>
+        <option value="Template">Template</option>
+        <option value="System">System</option>
+        <option value="Audit">Audit</option>
+        <option value="Research">Research</option>
+        <option value="Teaching">Teaching</option>
+        <option value="Design">Design</option>
+        <option value="Code">Code</option>
+        <option value="Workflow">Workflow</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Tool Target</label>
+      <select id="tool_target">
+        <option value="ChatGPT">ChatGPT</option>
+        <option value="Claude">Claude</option>
+        <option value="Gemini">Gemini</option>
+        <option value="General">General</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="row-2">
+    <div class="field">
+      <label>Status</label>
+      <select id="status">
+        <option value="Draft">Draft</option>
+        <option value="Active">Active</option>
+        <option value="Deprecated">Deprecated</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Source</label>
+      <input type="text" id="source" placeholder="Where did this come from?">
+    </div>
+  </div>
+
+  <div class="field">
+    <label>Tags <small>(comma-separated)</small></label>
+    <input type="text" id="tags" placeholder="tag1, tag2, tag3">
+  </div>
+
+  <div class="field">
+    <label>Notes</label>
+    <textarea id="notes" rows="2" placeholder="Usage tips, caveats, reminders..."></textarea>
+  </div>
+
+  <div class="field">
+    <div class="checkbox-row">
+      <input type="checkbox" id="is_favorite">
+      <label style="text-transform:none; font-size:13px; margin:0;">Mark as Favorite</label>
+    </div>
+  </div>
+
+</div>
+
+<div class="actions">
+  <button class="secondary" onclick="clearForm()">Clear</button>
+  <button class="primary" onclick="submitForm()">Save Prompt</button>
+</div>
+
+<script>
+  function setStatus(msg, type) {
+    var bar = document.getElementById('status-bar');
+    bar.textContent = msg;
+    bar.className = type;
+  }
+
+  function clearStatus() {
+    var bar = document.getElementById('status-bar');
+    bar.className = '';
+    bar.style.display = 'none';
+  }
+
+  // ── Category / Subcategory ──────────────────────────────────────
+  google.script.run
+    .withSuccessHandler(function(cats) {
+      var sel = document.getElementById('category');
+      sel.innerHTML = '<option value="">— Select —</option>';
+      cats.forEach(function(c) {
+        var o = document.createElement('option');
+        o.value = c;
+        o.textContent = c;
+        sel.appendChild(o);
+      });
+    })
+    .withFailureHandler(function(e) { setStatus('Failed to load categories: ' + e.message, 'error'); })
+    .sidebarGetCategories();
+
+  function onCategoryChange() {
+    var cat = document.getElementById('category').value;
+    var subSel = document.getElementById('subcategory');
+    subSel.innerHTML = '<option value="">— Loading —</option>';
+    if (!cat) { subSel.innerHTML = '<option value="">— Select category first —</option>'; return; }
+    google.script.run
+      .withSuccessHandler(function(subs) {
+        subSel.innerHTML = '<option value="">— None —</option>';
+        subs.forEach(function(s) {
+          var o = document.createElement('option');
+          o.value = s;
+          o.textContent = s;
+          subSel.appendChild(o);
+        });
+      })
+      .withFailureHandler(function(e) { setStatus('Failed to load subcategories: ' + e.message, 'error'); })
+      .sidebarGetSubcategories(cat);
+  }
+
+  // ── Template Variables ──────────────────────────────────────────
+  function onPromptTypeChange() {
+    var isTemplate = document.getElementById('prompt_type').value === 'Template';
+    document.getElementById('variables-section').style.display = isTemplate ? 'block' : 'none';
+    if (isTemplate) detectVariables();
+  }
+
+  document.getElementById('full_prompt').addEventListener('input', function() {
+    if (document.getElementById('prompt_type').value === 'Template') detectVariables();
+  });
+
+  function detectVariables() {
+    var text = document.getElementById('full_prompt').value;
+    var matches = text.match(/\{\{([^}]+)\}\}/g) || [];
+    var names = [...new Set(matches.map(function(m) { return m.replace(/^\{\{|\}\}$/g, '').trim(); }))];
+    var list = document.getElementById('vars-list');
+    var existing = {};
+    list.querySelectorAll('.var-row').forEach(function(row) {
+      var n = row.querySelector('.var-name').value;
+      if (n) existing[n] = { desc: row.querySelector('.var-desc').value, def: row.querySelector('.var-default').value };
+    });
+    list.innerHTML = '';
+    names.forEach(function(name) {
+      var prev = existing[name] || {};
+      addVarRow(name, prev.desc || '', prev.def || '');
+    });
+  }
+
+  function addVarRow(name, desc, def) {
+    var row = document.createElement('div');
+    row.className = 'var-row';
+    row.innerHTML =
+      '<input class="var-name" type="text" placeholder="name" value="' + (name||'') + '" style="max-width:90px">' +
+      '<input class="var-desc" type="text" placeholder="description" value="' + (desc||'') + '">' +
+      '<input class="var-default" type="text" placeholder="default" value="' + (def||'') + '" style="max-width:90px">' +
+      '<button onclick="this.parentNode.remove()" title="Remove">×</button>';
+    document.getElementById('vars-list').appendChild(row);
+  }
+
+  function getVariables() {
+    var vars = [];
+    document.querySelectorAll('#vars-list .var-row').forEach(function(row) {
+      var name = row.querySelector('.var-name').value.trim();
+      if (name) vars.push({
+        name: name,
+        description: row.querySelector('.var-desc').value.trim(),
+        default: row.querySelector('.var-default').value.trim()
+      });
+    });
+    return vars;
+  }
+
+  // ── Form Submit ────────────────────────────────────────────────
+  function submitForm() {
+    clearStatus();
+    var title = document.getElementById('title').value.trim();
+    var fullPrompt = document.getElementById('full_prompt').value.trim();
+    var category = document.getElementById('category').value;
+
+    if (!title) { setStatus('Title is required.', 'error'); return; }
+    if (!fullPrompt) { setStatus('Full Prompt is required.', 'error'); return; }
+    if (!category) { setStatus('Category is required.', 'error'); return; }
+
+    var promptType = document.getElementById('prompt_type').value;
+    var vars = promptType === 'Template' ? getVariables() : [];
+
+    var formData = {
+      Title: title,
+      Category: category,
+      Subcategory: document.getElementById('subcategory').value || '',
+      Description: document.getElementById('description').value.trim(),
+      Full_Prompt: fullPrompt,
+      Tags: document.getElementById('tags').value.split(',').map(function(t){return t.trim();}).filter(Boolean),
+      Is_Favorite: document.getElementById('is_favorite').checked,
+      Tool_Target: document.getElementById('tool_target').value,
+      Prompt_Type: promptType,
+      Status: document.getElementById('status').value,
+      Source: document.getElementById('source').value.trim(),
+      Notes: document.getElementById('notes').value.trim(),
+      Variables: vars.length ? JSON.stringify(vars) : ''
+    };
+
+    setStatus('Saving prompt…', 'loading');
+    document.querySelector('button.primary').disabled = true;
+
+    google.script.run
+      .withSuccessHandler(function(result) {
+        document.querySelector('button.primary').disabled = false;
+        setStatus('✓ Prompt saved: ' + result.Prompt_ID, 'success');
+        clearForm();
+      })
+      .withFailureHandler(function(e) {
+        document.querySelector('button.primary').disabled = false;
+        setStatus('Error: ' + e.message, 'error');
+      })
+      .sidebarAddPrompt(formData);
+  }
+
+  function clearForm() {
+    ['title','description','full_prompt','tags','source','notes'].forEach(function(id) {
+      document.getElementById(id).value = '';
+    });
+    document.getElementById('category').value = '';
+    document.getElementById('subcategory').innerHTML = '<option value="">— Select category first —</option>';
+    document.getElementById('prompt_type').value = 'General';
+    document.getElementById('tool_target').value = 'ChatGPT';
+    document.getElementById('status').value = 'Draft';
+    document.getElementById('is_favorite').checked = false;
+    document.getElementById('variables-section').style.display = 'none';
+    document.getElementById('vars-list').innerHTML = '';
+    clearStatus();
+  }
+</script>
+</body>
+</html>
