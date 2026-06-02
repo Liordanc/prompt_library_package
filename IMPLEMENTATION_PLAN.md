@@ -11,7 +11,7 @@
 | תשתית בסיסית | ✅ הושלם |
 | תיעוד ועקרונות עבודה | ✅ הושלם |
 | filterPrompts + ולידציה + בדיקות + README | ✅ הושלם |
-| פריסה לסביבה אמיתית | ⏳ ממתין |
+| פריסה לסביבה אמיתית | ✅ הושלם |
 | מערכת תבניות עם משתנים | ✅ הושלם |
 | גרסאות (Versioning) | ✅ הושלם |
 | UI Sidebar | ✅ הושלם |
@@ -152,6 +152,19 @@
 - **בדיקות תחביר:** 13/13 PASS (כל קבצי ה-.gs)
 - **commit:** (commit הנוכחי)
 
+#### ✅ DONE-011 — פריסה בסביבה אמיתית (TODO-001)
+- **מה:** פריסת כל 13 קבצי ה-.gs לפרויקט GAS חדש + Spreadsheet חדש + Web App.
+- **פרטי פריסה:**
+  - Script ID: `1FfQhq2JQm5mfAUpdU0qiAqxYPLW7YUY2d_qmKFB_P5GweNbf3XDRC6`
+  - Spreadsheet ID: `1Jm5IYntL9XbWQMZWNnR3meMrepkq2Pt1fwtsicurImM`
+  - Web App URL: `https://script.google.com/macros/s/AKfycbzBrF4kapCUMwEq4sguTbkoOg7z5EUaja632W7Ta4E3hptA5AmtCnnHHcFn8TjWbO8b/exec`
+- **תוצאות בדיקות:**
+  - `healthCheck` → `ok: true` (דפדפן)
+  - `runPromptLibrarySetupTest()` → `ok: true`, 5/5 passed
+  - `runProductionReadinessCheck()` → `ok: true`, כל 8 גיליונות, 21 עמודות, אין כפילויות
+- **תאריך:** 2026-06-02
+- **סטטוס:** ✅ הושלם
+
 #### ✅ DONE-010 — השלמת פערים: filterPrompts, ולידציה, בדיקות, README
 - **מה:** השלמת 4 פערים שזוהו לאחר סקירת הקוד הקיים.
 - **קבצים שהשתנו:**
@@ -173,7 +186,7 @@
 
 ### 🔴 עדיפות קריטית
 
-#### 🔄 TODO-001 — פריסה בסביבה אמיתית (בתהליך)
+#### ✅ TODO-001 — פריסה בסביבה אמיתית — **הושלם ב-DONE-011**
 - **פרטי פריסה:**
   - Script ID: `1FfQhq2JQm5mfAUpdU0qiAqxYPLW7YUY2d_qmKFB_P5GweNbf3XDRC6-c`
   - Web App URL: `https://script.google.com/macros/s/AKfycbzBrF4kapCUMwEq4sguTbkoOg7z5EUaja632W7Ta4E3hptA5AmtCnnHHcFn8TjWbO8b/exec`
