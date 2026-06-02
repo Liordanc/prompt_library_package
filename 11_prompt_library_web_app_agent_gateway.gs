@@ -36,7 +36,8 @@ const AGENT_GATEWAY_CONFIG = Object.freeze({
     "getTopRatedPrompts",
     "getMostUsedPrompts",
     "getRecentlyUsedPrompts",
-    "filterPrompts"
+    "filterPrompts",
+    "seedMockData"
   ]
 });
 
@@ -140,7 +141,8 @@ function dispatchAgentAction_(action, payload) {
     getTopRatedPrompts: () => getTopRatedPrompts(payload.limit),
     getMostUsedPrompts: () => getMostUsedPrompts(payload.limit),
     getRecentlyUsedPrompts: () => getRecentlyUsedPrompts(payload.limit),
-    filterPrompts: () => filterPrompts(payload.criteria || {})
+    filterPrompts: () => filterPrompts(payload.criteria || {}),
+    seedMockData: () => seedMockData()
   };
 
   const handler = actionMap[action];
