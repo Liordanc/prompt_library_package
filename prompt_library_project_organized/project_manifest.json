@@ -1,0 +1,162 @@
+[
+  {
+    "path": ".github/dependabot.yml",
+    "size": 271
+  },
+  {
+    "path": ".github/workflows/code-quality.yml",
+    "size": 799
+  },
+  {
+    "path": ".github/workflows/codeql.yml",
+    "size": 710
+  },
+  {
+    "path": "README.md",
+    "size": 1684
+  },
+  {
+    "path": "agent/.env.example",
+    "size": 56
+  },
+  {
+    "path": "agent/agent-client-legacy.js",
+    "size": 4436
+  },
+  {
+    "path": "agent/agent-client.js",
+    "size": 4436
+  },
+  {
+    "path": "docs/CODE_QUALITY_CHECKLIST.md",
+    "size": 1240
+  },
+  {
+    "path": "docs/FILE_MANIFEST.md",
+    "size": 1523
+  },
+  {
+    "path": "docs/FIRST_PROMPT_INTAKE_TEMPLATE.md",
+    "size": 1147
+  },
+  {
+    "path": "docs/KNOWN_RISKS.md",
+    "size": 1751
+  },
+  {
+    "path": "docs/PACKAGE_CHECK_REPORT.md",
+    "size": 859
+  },
+  {
+    "path": "docs/README_INSTALLATION.md",
+    "size": 1218
+  },
+  {
+    "path": "docs/github_code_quality_agent_instructions.md",
+    "size": 2358
+  },
+  {
+    "path": "docs/installation_checklist.md",
+    "size": 948
+  },
+  {
+    "path": "docs/prompt_library_antigravity_agent_instructions.md",
+    "size": 5913
+  },
+  {
+    "path": "docs/prompt_library_file_manifest_v2.md",
+    "size": 4640
+  },
+  {
+    "path": "quality/README_github_quality.md",
+    "size": 895
+  },
+  {
+    "path": "quality/eslint.config.mjs",
+    "size": 1483
+  },
+  {
+    "path": "quality/gas/.gitignore",
+    "size": 50
+  },
+  {
+    "path": "quality/gas/README_code_quality.md",
+    "size": 589
+  },
+  {
+    "path": "quality/gas/eslint.config.mjs",
+    "size": 1517
+  },
+  {
+    "path": "quality/gas/gas_code_standards.md",
+    "size": 5107
+  },
+  {
+    "path": "quality/gas/package.json",
+    "size": 486
+  },
+  {
+    "path": "quality/gas/scripts/audit-code.js",
+    "size": 4663
+  },
+  {
+    "path": "quality/package.json",
+    "size": 548
+  },
+  {
+    "path": "quality/scripts/audit-code-advanced.js",
+    "size": 7419
+  },
+  {
+    "path": "source/01_prompt_library_schema_config.gs",
+    "size": 15274
+  },
+  {
+    "path": "source/02_prompt_library_schema_service.gs",
+    "size": 8210
+  },
+  {
+    "path": "source/03_prompt_library_document_service.gs",
+    "size": 8394
+  },
+  {
+    "path": "source/04_prompt_library_prompt_service.gs",
+    "size": 8543
+  },
+  {
+    "path": "source/05_prompt_library_taxonomy_service.gs",
+    "size": 11059
+  },
+  {
+    "path": "source/06_prompt_library_validation_service.gs",
+    "size": 9180
+  },
+  {
+    "path": "source/07_prompt_library_migration_service.gs",
+    "size": 9531
+  },
+  {
+    "path": "source/08_prompt_library_test_runner.gs",
+    "size": 6519
+  },
+  {
+    "path": "source/09_prompt_library_main.gs",
+    "size": 4868
+  },
+  {
+    "path": "source/10_prompt_library_strict_installer.gs",
+    "size": 5832
+  },
+  {
+    "path": "source/11_prompt_library_web_app_agent_gateway.gs",
+    "size": 6756
+  },
+  {
+    "path": "source/12_prompt_library_menu_controller.gs",
+    "size": 9269
+  },
+  {
+    "path": "source/13_schema_and_function_map_builder.gs",
+    "size": 24092
+  }
+]

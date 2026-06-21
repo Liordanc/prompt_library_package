@@ -1,0 +1,19 @@
+{
+  "name": "prompt-library-gas-quality",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "lint": "eslint \"**/*.{js,gs}\"",
+    "lint:fix": "eslint \"**/*.{js,gs}\" --fix",
+    "audit": "node scripts/audit-code-advanced.js",
+    "duplicates": "jscpd \"**/*.{js,gs}\" --ignore \"node_modules/**\" --threshold 0",
+    "check": "npm run lint && npm run audit && npm run duplicates"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.0",
+    "eslint": "^9.39.0",
+    "globals": "^15.15.0",
+    "jscpd": "^4.0.5"
+  }
+}
