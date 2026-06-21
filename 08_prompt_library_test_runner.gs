@@ -1,7 +1,28 @@
 /**
- * Prompt Library Test Runner
+ * @file 08_prompt_library_test_runner.gs
+ * @category 🧪 הרצת בדיקות
+ *
+ * קובץ זה מריץ בדיקות אוטומטיות כדי לוודא שהמערכת עובדת נכון לאחר התקנה או שינויים.
+ * הוא בודק את הגדרות הגיליון, יצירת פרומפטים, קטגוריות ותגיות, תקינות הנתונים ותהליכי מיגרציה.
+ *
+ * פונקציות ציבוריות ראשיות:
+ * - `runPromptLibrarySetupTest`                    — בדיקות הקמה בסיסיות לאחר ההתקנה
+ * - `runPromptLibraryCreatePromptTest`             — בדיקת יצירת פרומפט מלאה
+ * - `runPromptLibraryTaxonomyTest`                 — בדיקת קטגוריות, תתי-קטגוריות ותגיות
+ * - `runPromptLibraryValidationTest`               — בדיקות תקינות על כל הנתונים
+ * - `runPromptLibraryMigrationInspectionTest`      — בדיקת פונקציות סקירה ומיגרציה
+ * - `runPromptLibraryFullTestSuite`                — הרצת כל הבדיקות ביחד (ללא יצירת פרומפט)
+ * - `runPromptLibraryFullTestSuiteWithPromptCreation` — הרצת כל הבדיקות כולל יצירת פרומפט בדיקה
  */
 
+/**
+ * מריצה בדיקות הקמה בסיסיות כדי לוודא שהמערכת הוגדרה כהלכה לאחר ההתקנה.
+ * הבדיקה כוללת: אתחול הספרייה, אימות גיליונות ועמודות, ובדיקת סכמות.
+ *
+ * ▶️ ניתן להרצה ישירה מהסקריפט
+ * @category ציבורי
+ * @returns {Object} סיכום תוצאות הבדיקה — כולל מספר בדיקות שעברו ונכשלו.
+ */
 function runPromptLibrarySetupTest() {
   const results = [];
 
@@ -14,6 +35,14 @@ function runPromptLibrarySetupTest() {
   return buildTestSummary_("runPromptLibrarySetupTest", results);
 }
 
+/**
+ * בודקת את כל תהליך יצירת פרומפט — מהתחלה ועד הסוף.
+ * יוצרת פרומפט לבדיקה ומאמתת שהוא נשמר, קריא ותקין.
+ *
+ * ▶️ ניתן להרצה ישירה מהסקריפט
+ * @category ציבורי
+ * @returns {Object} סיכום תוצאות הבדיקה — כולל מצב כל שלב ביצירת הפרומפט.
+ */
 function runPromptLibraryCreatePromptTest() {
   const testPromptData = {
     Title: "Test Prompt - Infrastructure Validation",
@@ -46,6 +75,14 @@ function runPromptLibraryCreatePromptTest() {
   return buildTestSummary_("runPromptLibraryCreatePromptTest", results);
 }
 
+/**
+ * בודקת שקטגוריות, תתי-קטגוריות ותגיות עובדים כראוי בספרייה.
+ * מאמתת שניתן לרשום, לאתר ולאמת קטגוריות קיימות.
+ *
+ * ▶️ ניתן להרצה ישירה מהסקריפט
+ * @category ציבורי
+ * @returns {Object} סיכום תוצאות בדיקת הטקסונומיה — כולל מצב כל בדיקת קטגוריה.
+ */
 function runPromptLibraryTaxonomyTest() {
   const results = [];
 
@@ -58,6 +95,14 @@ function runPromptLibraryTaxonomyTest() {
   return buildTestSummary_("runPromptLibraryTaxonomyTest", results);
 }
 
+/**
+ * מריצה את כל בדיקות התקינות על הנתונים בגיליון.
+ * בודקת גיליונות, סכמות, פרומפטים, קטגוריות, סטטוסים ועוד.
+ *
+ * ▶️ ניתן להרצה ישירה מהסקריפט
+ * @category ציבורי
+ * @returns {Object} סיכום תוצאות כל בדיקות התקינות.
+ */
 function runPromptLibraryValidationTest() {
   const results = [];
 
@@ -75,6 +120,14 @@ function runPromptLibraryValidationTest() {
   return buildTestSummary_("runPromptLibraryValidationTest", results);
 }
 
+/**
+ * בודקת שפונקציות הסקירה והמיגרציה של הגיליון עובדות כראוי.
+ * כוללת סקירת גיליון קיים, סימון גיליונות מיושנים ובניית דוח מיגרציה.
+ *
+ * ▶️ ניתן להרצה ישירה מהסקריפט
+ * @category ציבורי
+ * @returns {Object} סיכום תוצאות בדיקת המיגרציה והסקירה.
+ */
 function runPromptLibraryMigrationInspectionTest() {
   const results = [];
 
@@ -85,6 +138,14 @@ function runPromptLibraryMigrationInspectionTest() {
   return buildTestSummary_("runPromptLibraryMigrationInspectionTest", results);
 }
 
+/**
+ * מריצה את כל חבילות הבדיקה ביחד — ללא יצירת פרומפט חדש.
+ * כוללת בדיקות הקמה, טקסונומיה, תקינות ומיגרציה.
+ *
+ * ▶️ ניתן להרצה ישירה מהסקריפט
+ * @category ציבורי
+ * @returns {Object} סיכום כולל של כל חבילות הבדיקה שהורצו.
+ */
 function runPromptLibraryFullTestSuite() {
   const suites = [];
 
@@ -105,6 +166,14 @@ function runPromptLibraryFullTestSuite() {
   return summary;
 }
 
+/**
+ * מריצה את כל הבדיקות, כולל יצירת פרומפט בדיקה אמיתי בגיליון.
+ * מתאימה לבדיקה מקיפה של כל מחזור החיים של פרומפט.
+ *
+ * ▶️ ניתן להרצה ישירה מהסקריפט
+ * @category ציבורי
+ * @returns {Object} סיכום כולל של כל הבדיקות, כולל יצירת פרומפט.
+ */
 function runPromptLibraryFullTestSuiteWithPromptCreation() {
   const suites = [];
 
@@ -125,6 +194,16 @@ function runPromptLibraryFullTestSuiteWithPromptCreation() {
   return summary;
 }
 
+/**
+ * מריצה פונקציית בדיקה בודדת ומתעדת את התוצאה — הצלחה או כישלון.
+ * אם הפונקציה נכשלת, השגיאה נתפסת ומתועדת מבלי לעצור את שאר הבדיקות.
+ *
+ * 🔒 פונקציה פנימית — לא מיועדת להרצה ישירה
+ * @category פנימי
+ * @param {string} testName - שם הבדיקה לצורך זיהוי בתוצאות.
+ * @param {Function} fn - הפונקציה שיש להריץ כחלק מהבדיקה.
+ * @returns {Object} אובייקט תוצאה הכולל: שם הבדיקה, האם עברה, זמן התחלה וסיום, ותוצאה או שגיאה.
+ */
 function runTest_(testName, fn) {
   const startedAt = new Date();
 
@@ -152,6 +231,16 @@ function runTest_(testName, fn) {
   }
 }
 
+/**
+ * בונה סיכום תוצאות לחבילת בדיקות שלמה ומתעד אותו ביומן הפעולות.
+ * מרכז את כל תוצאות הבדיקות ומחשב כמה עברו וכמה נכשלו.
+ *
+ * 🔒 פונקציה פנימית — לא מיועדת להרצה ישירה
+ * @category פנימי
+ * @param {string} suiteName - שם חבילת הבדיקות לזיהוי בתיעוד.
+ * @param {Object[]} results - מערך תוצאות בדיקות בודדות כפי שהוחזרו מ-`runTest_`.
+ * @returns {Object} סיכום החבילה הכולל: שם, האם עברה, מספר כולל, עברו ונכשלו.
+ */
 function buildTestSummary_(suiteName, results) {
   const summary = {
     suiteName,
@@ -167,6 +256,15 @@ function buildTestSummary_(suiteName, results) {
   return summary;
 }
 
+/**
+ * בונה סיכום קצר ומקוצר של תוצאות חבילת הבדיקות — ללא פרטי בדיקות בודדות.
+ * משמש לתיעוד ביומן הפעולות מבלי לכלול נתונים עודפים.
+ *
+ * 🔒 פונקציה פנימית — לא מיועדת להרצה ישירה
+ * @category פנימי
+ * @param {Object} summary - אובייקט סיכום מלא כפי שהוחזר מ-`runPromptLibraryFullTestSuite` או דומה.
+ * @returns {Object} אובייקט מקוצר הכולל שם, מצב הצלחה, ורשימת חבילות עם סטטיסטיקות בלבד.
+ */
 function buildCompactTestSummary_(summary) {
   return {
     suiteName: summary.suiteName,

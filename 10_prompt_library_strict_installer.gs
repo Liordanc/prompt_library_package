@@ -1,11 +1,29 @@
 /**
- * Prompt Library Strict Installer
- * Requires:
+ * @file 10_prompt_library_strict_installer.gs
+ * @category ⚙️ התקנה קשיחה ובטוחה
+ *
+ * קובץ זה מבצע התקנה מסודרת ובטוחה של תשתית הספרייה —
+ * שלב אחר שלב, ועוצר מיד אם משהו נכשל.
+ * בניגוד להתקנה הרגילה, כאן כל כישלון גורם להפסקה מיידית של התהליך כולו.
+ *
+ * פונקציות ציבוריות ראשיות:
+ * - `installPromptLibraryInfrastructureStrict` — התקנה קפדנית של כל תשתית הספרייה
+ *
+ * תלויות:
  * - PROMPT_LIBRARY_SCHEMA
  * - prompt_library_schema_service
  * - prompt_library_validation_service
  */
 
+/**
+ * מתקינה את כל תשתית ספריית הפרומפטים בצורה קפדנית — שלב אחר שלב.
+ * אם שלב אחד נכשל, ההתקנה כולה עוצרת מיד ומחזירה את מקום הכישלון.
+ * השלבים כוללים: גיבוי, יצירת גיליונות, סדר גיליונות, הוספת עמודות, הקפאת שורות, זריעת נתונים ואימות.
+ *
+ * ▶️ ניתן להרצה ישירה מהסקריפט
+ * @category ציבורי
+ * @returns {Object} תוצאת ההתקנה — כולל האם הצליחה, היכן נעצרה אם כשלה, ורשימת כל השלבים שבוצעו.
+ */
 function installPromptLibraryInfrastructureStrict() {
   const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
   const startedAt = new Date();
@@ -194,6 +212,16 @@ function installPromptLibraryInfrastructureStrict() {
   return successResult;
 }
 
+/**
+ * בודקת שתוצאת שלב מסוים תקינה — אם לא, זורקת שגיאה שעוצרת את כל ההתקנה.
+ * משמשת להגנה קפדנית: כל שלב חייב להצליח לפני שממשיכים לשלב הבא.
+ *
+ * 🔒 פונקציה פנימית — לא מיועדת להרצה ישירה
+ * @category פנימי
+ * @param {Object} result - תוצאת השלב לבדיקה — חייבת להכיל שדה `ok`.
+ * @returns {Object} אותה תוצאה שהתקבלה, אם היא תקינה.
+ * @throws {Error} זורקת שגיאה עם פרטי התוצאה אם `result.ok === false`.
+ */
 function assertStrictStepOk_(result) {
   if (result && result.ok === false) {
     throw new Error(JSON.stringify(result));
@@ -202,6 +230,17 @@ function assertStrictStepOk_(result) {
   return result;
 }
 
+/**
+ * מדפיסה הודעת מעקב מפורטת לקונסול וליומן Apps Script.
+ * משמשת לתיעוד כל שלב בתהליך ההתקנה הקפדנית.
+ *
+ * 🔒 פונקציה פנימית — לא מיועדת להרצה ישירה
+ * @category פנימי
+ * @param {string} eventType - סוג האירוע (לדוגמה: "STEP_START", "STEP_SUCCESS", "PIPELINE_STOPPED").
+ * @param {string} name - שם השלב או הרכיב שאליו מתייחסת ההודעה.
+ * @param {Object} [payload] - נתונים נוספים לתיעוד — יומר לטקסט JSON אוטומטית.
+ * @returns {void} אינה מחזירה ערך — פועלת ישירות על הקונסול.
+ */
 function strictInstallerLog_(eventType, name, payload) {
   const message = `[Prompt Library Strict Installer] ${eventType} | ${name} | ${JSON.stringify(payload || {})}`;
 
@@ -209,6 +248,15 @@ function strictInstallerLog_(eventType, name, payload) {
   Logger.log(message);
 }
 
+/**
+ * מחזירה גרסה מקוצרת של תוצאת שלב — רק השדות החשובים לתיעוד.
+ * מונעת שמירת נתונים עודפים ביומן הפעולות.
+ *
+ * 🔒 פונקציה פנימית — לא מיועדת להרצה ישירה
+ * @category פנימי
+ * @param {Object|null} result - תוצאת שלב ההתקנה שיש לקצר. יכולה להיות null.
+ * @returns {Object|null} אובייקט מקוצר הכולל רק שדות רלוונטיים, או null אם הקלט היה ריק.
+ */
 function compactStrictInstallerResult_(result) {
   if (!result) {
     return null;

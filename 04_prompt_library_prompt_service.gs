@@ -1,8 +1,36 @@
 /**
- * Prompt Library Prompt Service
- * Requires: PROMPT_LIBRARY_SCHEMA
+ * 📝 ניהול פרומפטים — שירות הפרומפטים של ספריית הפרומפטים
+ *
+ * קובץ זה אחראי על כל הפעולות הקשורות לפרומפטים עצמם —
+ * הוספה, עדכון, חיפוש, ארכיון וסימון מועדפים.
+ *
+ * תלויות: PROMPT_LIBRARY_SCHEMA
+ *
+ * פונקציות ציבוריות ראשיות:
+ * - addPrompt            — מוסיפה פרומפט חדש לספרייה
+ * - addPromptRecord      — מוסיפה שורה לגיליון Prompts בלבד
+ * - updatePromptRecord   — מעדכנת שדות בפרומפט קיים
+ * - getPromptRecordById  — שולפת פרומפט לפי מזהה
+ * - findPromptRecords    — מחפשת פרומפטים לפי מילות חיפוש
+ * - markPromptFavorite   — מסמנת פרומפט כמועדף
+ * - unmarkPromptFavorite — מבטלת סימון מועדף
+ * - togglePromptFavorite — הופכת את מצב המועדף
+ * - getFavoritePrompts   — מחזירה את כל הפרומפטים המועדפים
+ * - archivePrompt        — מעבירה פרומפט לסטטוס ארכיון
+ * - deprecatePrompt      — מסמנת פרומפט כמיושן
+ * - restorePrompt        — מחזירה פרומפט לסטטוס פעיל
+ * - validatePromptRecord — בודקת שכל שדות החובה מלאים
+ * - generatePreviewText  — יוצרת תצוגה קצרה מהפרומפט המלא
+ * - truncatePreviewText  — קוצצת טקסט לאורך מקסימלי
  */
 
+/**
+ * מוסיפה פרומפט חדש לספרייה — יוצרת מסמך, שורה בגיליון ומחברת תגיות.
+ * ▶️ ניתן להרצה ישירה מהסקריפט
+ * @category ציבורי
+ * @param {Object} promptData — אובייקט עם פרטי הפרומפט החדש (כותרת, תוכן, תגיות וכו')
+ * @returns {Object} הרשומה המלאה של הפרומפט שנוצר
+ */
 function addPrompt(promptData) {
   const normalized = normalizePromptData_(promptData);
   const documentResult = createPromptDocument(normalized);
@@ -23,6 +51,13 @@ function addPrompt(promptData) {
   return record;
 }
 
+/**
+ * מוסיפה שורה לגיליון Prompts בלבד — ללא יצירת מסמך.
+ * ▶️ ניתן להרצה ישירה מהסקריפט
+ * @category ציבורי
+ * @param {Object} promptData — אובייקט עם נתוני הפרומפט לשמירה בגיליון
+ * @returns {Object} אובייקט עם ערכי השורה שנוספה
+ */
 function addPromptRecord(promptData) {
   const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
   const sheet = spreadsheet.getSheetByName("Prompts");
@@ -39,6 +74,14 @@ function addPromptRecord(promptData) {
   return objectFromHeaders_(headers, row);
 }
 
+/**
+ * מעדכנת שדות בפרומפט קיים לפי המזהה שלו.
+ * ▶️ ניתן להרצה ישירה מהסקריפט
+ * @category ציבורי
+ * @param {string} promptId — מזהה ייחודי של הפרומפט לעדכון
+ * @param {Object} updates — אובייקט עם השדות החדשים לעדכון
+ * @returns {Object} הרשומה המעודכנת של הפרומפט
+ */
 function updatePromptRecord(promptId, updates) {
   const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
   const sheet = spreadsheet.getSheetByName("Prompts");
@@ -61,6 +104,13 @@ function updatePromptRecord(promptId, updates) {
   return nextRecord;
 }
 
+/**
+ * שולפת פרומפט מהגיליון לפי המזהה הייחודי שלו.
+ * ▶️ ניתן להרצה ישירה מהסקריפט
+ * @category ציבורי
+ * @param {string} promptId — המזהה הייחודי של הפרומפט
+ * @returns {Object|null} אובייקט עם נתוני הפרומפט, או null אם לא נמצא
+ */
 function getPromptRecordById(promptId) {
   const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
   const sheet = spreadsheet.getSheetByName("Prompts");
@@ -76,6 +126,14 @@ function getPromptRecordById(promptId) {
   return objectFromHeaders_(headers, values);
 }
 
+/**
+ * מחפשת פרומפטים בגיליון לפי מילת חיפוש חופשית.
+ * החיפוש מתבצע בכל השדות: כותרת, תיאור, תגיות, קטגוריה ועוד.
+ * ▶️ ניתן להרצה ישירה מהסקריפט
+ * @category ציבורי
+ * @param {string} query — מילת החיפוש (אפשר להשאיר ריק כדי לקבל את כולם)
+ * @returns {Object[]} רשימת פרומפטים התואמים לחיפוש
+ */
 function findPromptRecords(query) {
   const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
   const sheet = spreadsheet.getSheetByName("Prompts");
@@ -111,14 +169,35 @@ function findPromptRecords(query) {
     });
 }
 
+/**
+ * מסמנת פרומפט כמועדף לפי מזהה.
+ * ▶️ ניתן להרצה ישירה מהסקריפט
+ * @category ציבורי
+ * @param {string} promptId — המזהה הייחודי של הפרומפט לסימון
+ * @returns {Object} הרשומה המעודכנת של הפרומפט
+ */
 function markPromptFavorite(promptId) {
   return updatePromptRecord(promptId, { Is_Favorite: true });
 }
 
+/**
+ * מבטלת את סימון המועדף של פרומפט לפי מזהה.
+ * ▶️ ניתן להרצה ישירה מהסקריפט
+ * @category ציבורי
+ * @param {string} promptId — המזהה הייחודי של הפרומפט
+ * @returns {Object} הרשומה המעודכנת של הפרומפט
+ */
 function unmarkPromptFavorite(promptId) {
   return updatePromptRecord(promptId, { Is_Favorite: false });
 }
 
+/**
+ * הופכת את מצב המועדף של פרומפט — אם מועדף הופך ללא-מועדף, ולהיפך.
+ * ▶️ ניתן להרצה ישירה מהסקריפט
+ * @category ציבורי
+ * @param {string} promptId — המזהה הייחודי של הפרומפט
+ * @returns {Object} הרשומה המעודכנת של הפרומפט
+ */
 function togglePromptFavorite(promptId) {
   const record = getPromptRecordById(promptId);
 
@@ -131,22 +210,56 @@ function togglePromptFavorite(promptId) {
   return updatePromptRecord(promptId, { Is_Favorite: !currentState });
 }
 
+/**
+ * מחזירה את כל הפרומפטים המסומנים כמועדפים.
+ * ▶️ ניתן להרצה ישירה מהסקריפט
+ * @category ציבורי
+ * @returns {Object[]} רשימת הפרומפטים המועדפים
+ */
 function getFavoritePrompts() {
   return findPromptRecords("").filter(record => parseBoolean_(record.Is_Favorite));
 }
 
+/**
+ * מעבירה פרומפט לסטטוס ארכיון — הפרומפט עדיין קיים אך אינו פעיל.
+ * ▶️ ניתן להרצה ישירה מהסקריפט
+ * @category ציבורי
+ * @param {string} promptId — המזהה הייחודי של הפרומפט לארכיון
+ * @returns {Object} הרשומה המעודכנת של הפרומפט
+ */
 function archivePrompt(promptId) {
   return updatePromptRecord(promptId, { Status: "Archived" });
 }
 
+/**
+ * מסמנת פרומפט כמיושן — מתאים לפרומפטים שהיו בשימוש אך אינם רלוונטיים עוד.
+ * ▶️ ניתן להרצה ישירה מהסקריפט
+ * @category ציבורי
+ * @param {string} promptId — המזהה הייחודי של הפרומפט
+ * @returns {Object} הרשומה המעודכנת של הפרומפט
+ */
 function deprecatePrompt(promptId) {
   return updatePromptRecord(promptId, { Status: "Deprecated" });
 }
 
+/**
+ * מחזירה פרומפט שהיה בארכיון או מיושן חזרה לסטטוס פעיל.
+ * ▶️ ניתן להרצה ישירה מהסקריפט
+ * @category ציבורי
+ * @param {string} promptId — המזהה הייחודי של הפרומפט לשחזור
+ * @returns {Object} הרשומה המעודכנת של הפרומפט
+ */
 function restorePrompt(promptId) {
   return updatePromptRecord(promptId, { Status: "Active" });
 }
 
+/**
+ * בודקת שכל שדות החובה של פרומפט מלאים ותקינים.
+ * ▶️ ניתן להרצה ישירה מהסקריפט
+ * @category ציבורי
+ * @param {string} promptId — המזהה הייחודי של הפרומפט לבדיקה
+ * @returns {{ ok: boolean, promptId: string, missingFields: string[] }} תוצאת הבדיקה: האם עבר, ורשימת שדות חסרים
+ */
 function validatePromptRecord(promptId) {
   const record = getPromptRecordById(promptId);
 
@@ -183,11 +296,27 @@ function validatePromptRecord(promptId) {
   };
 }
 
+/**
+ * יוצרת גרסה מקוצרת של הפרומפט המלא לצורך תצוגה בגיליון.
+ * אורך התצוגה נקבע לפי הגדרות הסכמה.
+ * ▶️ ניתן להרצה ישירה מהסקריפט
+ * @category ציבורי
+ * @param {string} fullPromptText — הטקסט המלא של הפרומפט
+ * @returns {string} טקסט מקוצר מוכן לתצוגה
+ */
 function generatePreviewText(fullPromptText) {
   const limit = Number(PROMPT_LIBRARY_SCHEMA.settings.previewTextLimit || 1500);
   return truncatePreviewText(fullPromptText, limit);
 }
 
+/**
+ * קוצצת טקסט לאורך מקסימלי מוגדר ומוסיפה "..." בסוף אם נחתך.
+ * ▶️ ניתן להרצה ישירה מהסקריפט
+ * @category ציבורי
+ * @param {string} text — הטקסט לקיצוץ
+ * @param {number} limit — מספר התווים המקסימלי המותר
+ * @returns {string} הטקסט לאחר קיצוץ (עם "…" אם נחתך)
+ */
 function truncatePreviewText(text, limit) {
   const normalized = String(text || "").trim();
 
@@ -198,6 +327,13 @@ function truncatePreviewText(text, limit) {
   return `${normalized.slice(0, limit).trim()}…`;
 }
 
+/**
+ * ממלאת ערכי ברירת מחדל לנתוני פרומפט חדש ומחזירה אובייקט מנורמל.
+ * 🔒 פונקציה פנימית — לא מיועדת להרצה ישירה
+ * @category פנימי
+ * @param {Object} promptData — נתוני הפרומפט המקוריים שהתקבלו מהמשתמש
+ * @returns {Object} אובייקט פרומפט מלא עם כל השדות הנדרשים וערכי ברירת מחדל
+ */
 function normalizePromptData_(promptData) {
   const now = new Date();
   const promptId = promptData.Prompt_ID || createId_(PROMPT_LIBRARY_SCHEMA.settings.idPrefixes.prompt);
@@ -224,6 +360,14 @@ function normalizePromptData_(promptData) {
   };
 }
 
+/**
+ * שולפת את הערך המתאים לשדה מסוים מנתוני הפרומפט, לפי שם עמודת הגיליון.
+ * 🔒 פונקציה פנימית — לא מיועדת להרצה ישירה
+ * @category פנימי
+ * @param {Object} promptData — אובייקט נתוני הפרומפט
+ * @param {string} header — שם העמודה שצריך לשלוף
+ * @returns {*} הערך המתאים לאותו שדה (מחרוזת, בוליאני, מערך וכו')
+ */
 function getPromptFieldValue_(promptData, header) {
   if (header === "Tags") {
     return Array.isArray(promptData.Tags) ? promptData.Tags.join(", ") : String(promptData.Tags || "");
@@ -240,6 +384,14 @@ function getPromptFieldValue_(promptData, header) {
   return "";
 }
 
+/**
+ * ממירה רשימת תגיות לפורמט אחיד — מערך של מחרוזות נקיות.
+ * מקבלת גם מערך וגם מחרוזת מופרדת בפסיקים.
+ * 🔒 פונקציה פנימית — לא מיועדת להרצה ישירה
+ * @category פנימי
+ * @param {string|string[]|null} tags — רשימת תגיות: מערך, מחרוזת מופרדת בפסיקים, או ריק
+ * @returns {string[]} מערך מחרוזות מנורמלות של התגיות
+ */
 function normalizeTags_(tags) {
   if (!tags) {
     return [];
@@ -252,6 +404,14 @@ function normalizeTags_(tags) {
   return String(tags).split(",").map(tag => tag.trim()).filter(tag => tag.length > 0);
 }
 
+/**
+ * מוצאת את מספר השורה של פרומפט בגיליון לפי המזהה שלו.
+ * 🔒 פונקציה פנימית — לא מיועדת להרצה ישירה
+ * @category פנימי
+ * @param {GoogleAppsScript.Spreadsheet.Sheet} sheet — אובייקט הגיליון לחיפוש
+ * @param {string} promptId — המזהה הייחודי של הפרומפט
+ * @returns {number|null} מספר השורה (מ-1), או null אם לא נמצא
+ */
 function findPromptRowIndex_(sheet, promptId) {
   const headers = getHeaderRow_(sheet);
   const promptIdColumnIndex = headers.indexOf("Prompt_ID") + 1;
@@ -272,6 +432,14 @@ function findPromptRowIndex_(sheet, promptId) {
   return matchIndex === -1 ? null : matchIndex + 2;
 }
 
+/**
+ * בונה אובייקט נתונים מרשימת כותרות עמודות ורשימת ערכים מתאימה.
+ * 🔒 פונקציה פנימית — לא מיועדת להרצה ישירה
+ * @category פנימי
+ * @param {string[]} headers — רשימת שמות העמודות (כותרות)
+ * @param {*[]} row — רשימת הערכים המתאימים לכל עמודה
+ * @returns {Object} אובייקט שמפות כל כותרת לערך המתאים לה
+ */
 function objectFromHeaders_(headers, row) {
   return headers.reduce((record, header, index) => {
     record[header] = row[index];
@@ -279,6 +447,13 @@ function objectFromHeaders_(headers, row) {
   }, {});
 }
 
+/**
+ * ממירה ערך שונים לבוליאני (אמת/שקר), כולל תמיכה בעברית ("כן"/"לא").
+ * 🔒 פונקציה פנימית — לא מיועדת להרצה ישירה
+ * @category פנימי
+ * @param {*} value — הערך לבדיקה: יכול להיות בוליאני, מחרוזת ("true"/"כן") או כל ערך אחר
+ * @returns {boolean} true אם הערך מייצג "כן" / אמת, false בכל מקרה אחר
+ */
 function parseBoolean_(value) {
   if (value === true) {
     return true;

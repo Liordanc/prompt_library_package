@@ -1,10 +1,23 @@
 /**
- * Schema And Function Map Builder
- * File number: 13
- * Requires:
- * - PROMPT_LIBRARY_SCHEMA
+ * @file 13_schema_and_function_map_builder.gs
+ * @category 📊 בניית גיליונות תיעוד פנימי
+ *
+ * קובץ זה בונה גיליונות תיעוד בתוך הגיליון עצמו —
+ * גיליון SCHEMA שמסביר את מבנה הטבלאות,
+ * וגיליון Function_Map שממפה את כל הפונקציות הראשיות.
+ *
+ * פונקציות ציבוריות ראשיות:
+ * - createSchemaAndFunctionMapSheets — יוצרת את שני גיליונות התיעוד
+ *
+ * דרישות: PROMPT_LIBRARY_SCHEMA חייב להיות מוגדר.
  */
 
+/**
+ * יוצרת את שני גיליונות התיעוד הפנימי: SCHEMA ו-Function_Map.
+ * @category ציבורי
+ * ▶️ ניתן להרצה ישירה מהסקריפט
+ * @returns {Object} אובייקט עם ok=true, רשימת הגיליונות שנוצרו ופרטי הגיליון
+ */
 function createSchemaAndFunctionMapSheets() {
   const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
 
@@ -25,6 +38,13 @@ function createSchemaAndFunctionMapSheets() {
   };
 }
 
+/**
+ * בונה את גיליון SCHEMA עם כל מבנה הטבלאות, עמודות, סוגי נתונים וכללי אימות.
+ * 🔒 פונקציה פנימית — לא מיועדת להרצה ישירה
+ * @category פנימי
+ * @param {Spreadsheet} spreadsheet - אובייקט הגיליון שבו ייבנה גיליון SCHEMA
+ * @returns {void} אינה מחזירה ערך
+ */
 function createSchemaSheet_(spreadsheet) {
   const sheet = getOrCreateSheetForDocs_(spreadsheet, "SCHEMA");
 
@@ -75,6 +95,13 @@ function createSchemaSheet_(spreadsheet) {
   formatDocumentationSheet_(sheet, headers.length);
 }
 
+/**
+ * בונה את גיליון Function_Map עם מיפוי כל הפונקציות הראשיות לפי תחום.
+ * 🔒 פונקציה פנימית — לא מיועדת להרצה ישירה
+ * @category פנימי
+ * @param {Spreadsheet} spreadsheet - אובייקט הגיליון שבו ייבנה גיליון Function_Map
+ * @returns {void} אינה מחזירה ערך
+ */
 function createFunctionMapSheet_(spreadsheet) {
   const sheet = getOrCreateSheetForDocs_(spreadsheet, "Function_Map");
 
@@ -101,6 +128,12 @@ function createFunctionMapSheet_(spreadsheet) {
   formatDocumentationSheet_(sheet, headers.length);
 }
 
+/**
+ * מחזירה את כל שורות הנתונים של מיפוי הפונקציות — כל שורה מייצגת פונקציה אחת.
+ * 🔒 פונקציה פנימית — לא מיועדת להרצה ישירה
+ * @category פנימי
+ * @returns {Array<Array>} מערך של שורות, כל שורה היא מערך של ערכי עמודות
+ */
 function getFunctionMapRows_() {
   return [
     [
@@ -466,6 +499,14 @@ function getFunctionMapRows_() {
   ];
 }
 
+/**
+ * מעצבת גיליון תיעוד: מקפיאה שורת כותרת, מגדירה bold, גלישת טקסט ומוסיפה פילטר.
+ * 🔒 פונקציה פנימית — לא מיועדת להרצה ישירה
+ * @category פנימי
+ * @param {Sheet} sheet - הגיליון שיש לעצב
+ * @param {number} columnCount - מספר העמודות שיש לעצב
+ * @returns {void} אינה מחזירה ערך
+ */
 function formatDocumentationSheet_(sheet, columnCount) {
   const lastRow = Math.max(sheet.getLastRow(), 1);
 
@@ -481,6 +522,14 @@ function formatDocumentationSheet_(sheet, columnCount) {
   sheet.getRange(1, 1, lastRow, columnCount).createFilter();
 }
 
+/**
+ * מחזירה גיליון קיים לפי שם, או יוצרת גיליון חדש אם לא נמצא.
+ * 🔒 פונקציה פנימית — לא מיועדת להרצה ישירה
+ * @category פנימי
+ * @param {Spreadsheet} spreadsheet - אובייקט הגיליון שבו מחפשים
+ * @param {string} sheetName - שם הגיליון שמחפשים או יוצרים
+ * @returns {Sheet} הגיליון שנמצא או נוצר
+ */
 function getOrCreateSheetForDocs_(spreadsheet, sheetName) {
   const existing = spreadsheet.getSheetByName(sheetName);
 
@@ -491,6 +540,13 @@ function getOrCreateSheetForDocs_(spreadsheet, sheetName) {
   return spreadsheet.insertSheet(sheetName);
 }
 
+/**
+ * ממירה שם טבלה באנגלית לשמה העברי המוצג בגיליון התיעוד.
+ * 🔒 פונקציה פנימית — לא מיועדת להרצה ישירה
+ * @category פנימי
+ * @param {string} tableName - שם הטבלה באנגלית
+ * @returns {string} השם העברי של הטבלה, או השם המקורי אם לא נמצא תרגום
+ */
 function translateTableName_(tableName) {
   const map = {
     Prompts: "פרומפטים",
@@ -505,6 +561,13 @@ function translateTableName_(tableName) {
   return map[tableName] || tableName;
 }
 
+/**
+ * ממירה שם עמודה באנגלית לשמה העברי המוצג בגיליון התיעוד.
+ * 🔒 פונקציה פנימית — לא מיועדת להרצה ישירה
+ * @category פנימי
+ * @param {string} columnName - שם העמודה באנגלית
+ * @returns {string} השם העברי של העמודה, או השם המקורי אם לא נמצא תרגום
+ */
 function translateColumnName_(columnName) {
   const map = {
     Prompt_ID: "מזהה פרומפט",
@@ -546,6 +609,13 @@ function translateColumnName_(columnName) {
   return map[columnName] || columnName;
 }
 
+/**
+ * ממירה ערך סכמה לפורמט מחרוזת מסודר להצגה בגיליון.
+ * 🔒 פונקציה פנימית — לא מיועדת להרצה ישירה
+ * @category פנימי
+ * @param {*} value - הערך שיש לנרמל (יכול להיות null, מערך, מחרוזת וכו')
+ * @returns {string} הערך כמחרוזת מסודרת, או מחרוזת ריקה אם null/undefined
+ */
 function normalizeSchemaValue_(value) {
   if (value === null || value === undefined) {
     return "";
@@ -558,6 +628,13 @@ function normalizeSchemaValue_(value) {
   return String(value);
 }
 
+/**
+ * שולפת את הערכים המותרים לעמודה מהסכמה המרכזית ומחזירה אותם כמחרוזת.
+ * 🔒 פונקציה פנימית — לא מיועדת להרצה ישירה
+ * @category פנימי
+ * @param {Object} column - אובייקט הגדרת העמודה מהסכמה
+ * @returns {string} הערכים המותרים מופרדים בפסיק, או מחרוזת ריקה אם אין
+ */
 function resolveAllowedValuesForSchema_(column) {
   if (!column.allowedValuesRef) {
     return "";
@@ -573,6 +650,14 @@ function resolveAllowedValuesForSchema_(column) {
   return values.join(", ");
 }
 
+/**
+ * מחזירה תיאור עברי של עמודה מסוימת בטבלה מסוימת, לשימוש בגיליון SCHEMA.
+ * 🔒 פונקציה פנימית — לא מיועדת להרצה ישירה
+ * @category פנימי
+ * @param {string} tableName - שם הטבלה שאליה העמודה שייכת
+ * @param {string} columnName - שם העמודה שרוצים לתאר
+ * @returns {string} התיאור העברי של העמודה, או מחרוזת ריקה אם לא נמצא תיאור
+ */
 function describeColumn_(tableName, columnName) {
   const map = {
     "Prompts.Prompt_ID": "מזהה קבוע של הפרומפט. משתמשים בו כדי למצוא ולעדכן פרומפט בלי להסתמך על השם.",

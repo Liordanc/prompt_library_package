@@ -1,8 +1,37 @@
 /**
- * Prompt Library Schema Service
+ * @file 02_prompt_library_schema_service.gs
+ * @description
+ * 🗂️ ניהול מבנה גיליונות — שירות סכמת ספריית הפרומפטים
+ *
+ * קובץ זה אחראי על בניית המבנה הטכני של ספריית הפרומפטים —
+ * יצירת גיליונות, עמודות, גיבויים ורישום פעולות.
+ *
+ * הוא משתמש בהגדרות שנמצאות בקובץ הסכמה (PROMPT_LIBRARY_SCHEMA)
+ * כדי לדעת אילו גיליונות ועמודות נדרשים.
+ *
+ * פונקציות ציבוריות ראשיות (ניתנות להרצה ישירה):
+ * - {@link initializePromptLibrary}  — מכינה את כל הגיליון לעבודה
+ * - {@link verifyRequiredSheets}     — בודקת שכל הגיליונות הדרושים קיימים
+ * - {@link verifyPromptsSchema}      — בודקת שגיליון הפרומפטים מלא
+ * - {@link logAction}                — רושמת פעולה ביומן המערכת
+ * - {@link logError}                 — רושמת שגיאה ביומן המערכת
+ *
  * Requires: PROMPT_LIBRARY_SCHEMA
  */
 
+/**
+ * מכינה את הגיליון לעבודה מלאה.
+ *
+ * ▶️ ניתן להרצה ישירה מהסקריפט
+ *
+ * הפונקציה עושה את כל ה"הקמה" הראשונית של ספריית הפרומפטים:
+ * יוצרת את כל הגיליונות שחסרים, מסדרת את סדרם, מוסיפה עמודות חסרות,
+ * קובעת שורת כותרת קפואה ומוסיפה נתוני פתיחה.
+ *
+ * @category ציבורי
+ * @returns {{ ok: boolean, spreadsheetId: string, spreadsheetUrl: string, timestamp: string }}
+ *   אובייקט עם אישור הצלחה, מזהה הגיליון, הקישור אליו וחותמת זמן.
+ */
 function initializePromptLibrary() {
   const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
 
@@ -22,6 +51,18 @@ function initializePromptLibrary() {
   };
 }
 
+/**
+ * בודקת שכל הגיליונות שהמערכת צריכה אכן קיימים בגיליון.
+ *
+ * ▶️ ניתן להרצה ישירה מהסקריפט
+ *
+ * עוברת על רשימת הגיליונות הנדרשים (כמו Prompts, Categories, Logs)
+ * ובודקת אם כל אחד מהם קיים בפועל. מחזירה תוצאה לכל גיליון.
+ *
+ * @category ציבורי
+ * @returns {{ ok: boolean, results: Array<{ sheetName: string, required: boolean, exists: boolean }> }}
+ *   אובייקט עם תוצאת הבדיקה הכוללת ורשימה מפורטת לכל גיליון.
+ */
 function verifyRequiredSheets() {
   const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
   const existingSheetNames = spreadsheet.getSheets().map(sheet => sheet.getName());
@@ -38,6 +79,18 @@ function verifyRequiredSheets() {
   };
 }
 
+/**
+ * בודקת שגיליון הפרומפטים מכיל את כל העמודות הדרושות.
+ *
+ * ▶️ ניתן להרצה ישירה מהסקריפט
+ *
+ * פותחת את גיליון "Prompts" ומשווה את עמודותיו מול הרשימה הנדרשת.
+ * אם חסרות עמודות — מחזירה אותן ברשימה.
+ *
+ * @category ציבורי
+ * @returns {{ ok: boolean, sheetName: string, existingHeaders: string[], requiredHeaders: string[], missingColumns: string[] }}
+ *   תוצאת הבדיקה: האם הגיליון תקין, אילו עמודות קיימות, אילו נדרשות ואילו חסרות.
+ */
 function verifyPromptsSchema() {
   const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
   const promptsConfig = getSheetConfig_("Prompts");
@@ -63,6 +116,19 @@ function verifyPromptsSchema() {
   };
 }
 
+/**
+ * יוצרת גיליונות שחסרים בגיליון האלקטרוני.
+ *
+ * 🔒 פונקציה פנימית — לא מיועדת להרצה ישירה
+ *
+ * עוברת על רשימת הגיליונות הנדרשים בסכמה, ובכל מקרה שגיליון חסר —
+ * יוצרת אותו ורושמת את הפעולה ביומן.
+ *
+ * @category פנימי
+ * @param {GoogleAppsScript.Spreadsheet.Spreadsheet} spreadsheet — הגיליון האלקטרוני הפעיל
+ * @param {object} schema — אובייקט הסכמה המכיל את רשימת הגיליונות הנדרשים
+ * @returns {void}
+ */
 function createMissingSheets_(spreadsheet, schema) {
   const existingSheetNames = spreadsheet.getSheets().map(sheet => sheet.getName());
 
@@ -76,6 +142,19 @@ function createMissingSheets_(spreadsheet, schema) {
     });
 }
 
+/**
+ * מוסיפה עמודות חסרות לכל גיליון שדורש אותן.
+ *
+ * 🔒 פונקציה פנימית — לא מיועדת להרצה ישירה
+ *
+ * עוברת על כל הגיליונות בסכמה, בודקת אם חסרות עמודות בשורת הכותרת
+ * ומוסיפה אותן בסוף. אם הגיליון ריק לחלוטין — יוצרת את שורת הכותרת מאפס.
+ *
+ * @category פנימי
+ * @param {GoogleAppsScript.Spreadsheet.Spreadsheet} spreadsheet — הגיליון האלקטרוני הפעיל
+ * @param {object} schema — אובייקט הסכמה עם הגדרות הגיליונות והעמודות
+ * @returns {void}
+ */
 function addMissingColumns_(spreadsheet, schema) {
   schema.sheets.forEach(sheetConfig => {
     const sheet = spreadsheet.getSheetByName(sheetConfig.sheetName);
@@ -112,6 +191,19 @@ function addMissingColumns_(spreadsheet, schema) {
   });
 }
 
+/**
+ * קובעת שורת כותרת קפואה בכל גיליון שמוגדר לכך.
+ *
+ * 🔒 פונקציה פנימית — לא מיועדת להרצה ישירה
+ *
+ * שורת כותרת קפואה נשארת גלויה תמיד גם בגלילה למטה,
+ * כך שתמיד ניתן לראות מה שם כל עמודה.
+ *
+ * @category פנימי
+ * @param {GoogleAppsScript.Spreadsheet.Spreadsheet} spreadsheet — הגיליון האלקטרוני הפעיל
+ * @param {object} schema — אובייקט הסכמה עם הגדרות הקפאת השורות לכל גיליון
+ * @returns {void}
+ */
 function applyFrozenRows_(spreadsheet, schema) {
   schema.sheets.forEach(sheetConfig => {
     const sheet = spreadsheet.getSheetByName(sheetConfig.sheetName);
@@ -124,6 +216,19 @@ function applyFrozenRows_(spreadsheet, schema) {
   });
 }
 
+/**
+ * מסדרת את הגיליונות בסדר המוגדר בסכמה.
+ *
+ * 🔒 פונקציה פנימית — לא מיועדת להרצה ישירה
+ *
+ * מזיזה כל גיליון למיקום המספרי שנקבע לו (sortOrder),
+ * כך שהכרטיסיות בתחתית הגיליון יופיעו בסדר הנכון.
+ *
+ * @category פנימי
+ * @param {GoogleAppsScript.Spreadsheet.Spreadsheet} spreadsheet — הגיליון האלקטרוני הפעיל
+ * @param {object} schema — אובייקט הסכמה עם שדה sortOrder לכל גיליון
+ * @returns {void}
+ */
 function applySheetOrder_(spreadsheet, schema) {
   const orderedSheets = schema.sheets
     .filter(sheetConfig => sheetConfig.required === true)
@@ -141,6 +246,19 @@ function applySheetOrder_(spreadsheet, schema) {
   });
 }
 
+/**
+ * מוסיפה שורות ראשוניות חיוניות לגיליונות שצריכים נתוני פתיחה.
+ *
+ * 🔒 פונקציה פנימית — לא מיועדת להרצה ישירה
+ *
+ * לדוגמה — קטגוריות ברירת מחדל בגיליון Categories.
+ * הפונקציה בודקת לפני ההוספה אם השורה כבר קיימת, כדי לא ליצור כפילויות.
+ *
+ * @category פנימי
+ * @param {GoogleAppsScript.Spreadsheet.Spreadsheet} spreadsheet — הגיליון האלקטרוני הפעיל
+ * @param {object} schema — אובייקט הסכמה עם שדה seedRows לכל גיליון רלוונטי
+ * @returns {void}
+ */
 function seedInitialRows_(spreadsheet, schema) {
   schema.sheets.forEach(sheetConfig => {
     if (!sheetConfig.seedRows || sheetConfig.seedRows.length === 0) {
@@ -181,6 +299,19 @@ function seedInitialRows_(spreadsheet, schema) {
   });
 }
 
+/**
+ * יוצרת עותק גיבוי של הגיליון לפני שינויים גדולים.
+ *
+ * 🔒 פונקציה פנימית — לא מיועדת להרצה ישירה
+ *
+ * אם מצב ה"מוגן" (protectedMode) מופעל בסכמה, הפונקציה מעתיקה את הגיליון
+ * כולו לגוגל דרייב ומצמידה לשמו חותמת זמן. כך אפשר לשחזר מצב קודם במידת הצורך.
+ *
+ * @category פנימי
+ * @param {GoogleAppsScript.Spreadsheet.Spreadsheet} spreadsheet — הגיליון האלקטרוני הפעיל
+ * @returns {{ backupFileId: string, backupFileUrl: string } | null}
+ *   פרטי קובץ הגיבוי שנוצר, או null אם הגיבוי אינו מופעל.
+ */
 function backupSpreadsheetStructure_(spreadsheet) {
   if (!PROMPT_LIBRARY_SCHEMA.workbook.protectedMode) {
     return null;
@@ -202,6 +333,19 @@ function backupSpreadsheetStructure_(spreadsheet) {
   };
 }
 
+/**
+ * שולפת את הגדרות הגיליון לפי שמו מתוך הסכמה.
+ *
+ * 🔒 פונקציה פנימית — לא מיועדת להרצה ישירה
+ *
+ * מחפשת בסכמה (PROMPT_LIBRARY_SCHEMA) את ההגדרות המלאות של גיליון
+ * לפי שמו. אם הגיליון לא מוגדר בסכמה — זורקת שגיאה.
+ *
+ * @category פנימי
+ * @param {string} sheetName — שם הגיליון לחיפוש (למשל: "Prompts", "Categories")
+ * @returns {object} אובייקט ההגדרות של הגיליון מתוך הסכמה (עמודות, שורות זרע, סדר וכו')
+ * @throws {Error} אם לא נמצאה הגדרה לגיליון עם השם שסופק
+ */
 function getSheetConfig_(sheetName) {
   const config = PROMPT_LIBRARY_SCHEMA.sheets.find(sheet => sheet.sheetName === sheetName);
 
@@ -212,6 +356,18 @@ function getSheetConfig_(sheetName) {
   return config;
 }
 
+/**
+ * קוראת את שמות העמודות (שורת הכותרת) מתוך גיליון נתון.
+ *
+ * 🔒 פונקציה פנימית — לא מיועדת להרצה ישירה
+ *
+ * מחזירה רשימה של הערכים בשורה הראשונה, תוך ניקוי רווחים מיותרים
+ * והסרת תאים ריקים.
+ *
+ * @category פנימי
+ * @param {GoogleAppsScript.Spreadsheet.Sheet} sheet — הגיליון שממנו לקרוא את הכותרות
+ * @returns {string[]} רשימת שמות העמודות הקיימים בשורה הראשונה
+ */
 function getHeaderRow_(sheet) {
   const lastColumn = sheet.getLastColumn();
 
@@ -226,6 +382,19 @@ function getHeaderRow_(sheet) {
     .filter(value => value.length > 0);
 }
 
+/**
+ * קוראת את כל הערכים בעמודה מסוימת (מלבד שורת הכותרת).
+ *
+ * 🔒 פונקציה פנימית — לא מיועדת להרצה ישירה
+ *
+ * מחזירה רשימה של כל הערכים הלא-ריקים בעמודה, החל משורה 2
+ * (מדלגת על שורת הכותרת בשורה 1).
+ *
+ * @category פנימי
+ * @param {GoogleAppsScript.Spreadsheet.Sheet} sheet — הגיליון שממנו לקרוא את הנתונים
+ * @param {number} columnNumber — מספר העמודה לקריאה (1 = עמודה ראשונה, 2 = שנייה וכו')
+ * @returns {string[]} רשימת הערכים הלא-ריקים בעמודה
+ */
 function getColumnValues_(sheet, columnNumber) {
   const lastRow = sheet.getLastRow();
 
@@ -241,6 +410,19 @@ function getColumnValues_(sheet, columnNumber) {
     .filter(value => value.length > 0);
 }
 
+/**
+ * מכינה שורת נתונים להוספה לגיליון — ממלאת תאים ריקים בערכי ברירת מחדל.
+ *
+ * 🔒 פונקציה פנימית — לא מיועדת להרצה ישירה
+ *
+ * הפונקציה ממפה את ערכי השורה לפי סדר העמודות, ואם עמודת תאריך יצירה
+ * או עדכון ריקה — ממלאת אותה בתאריך ושעה נוכחיים.
+ *
+ * @category פנימי
+ * @param {Array} seedRow — שורת הנתונים המקורית (מערך של ערכים)
+ * @param {string[]} headers — רשימת שמות העמודות לפי הסדר בגיליון
+ * @returns {Array} שורה מוכנה להכנסה לגיליון — באורך מלא ועם תאריכים ממולאים
+ */
 function normalizeSeedRow_(seedRow, headers) {
   const row = new Array(headers.length).fill("");
 
@@ -259,6 +441,23 @@ function normalizeSeedRow_(seedRow, headers) {
   return row;
 }
 
+/**
+ * רושמת פעולה ביומן המערכת (גיליון Logs).
+ *
+ * ▶️ ניתן להרצה ישירה מהסקריפט
+ *
+ * בכל פעם שהמערכת מבצעת פעולה חשובה (יצירה, עדכון, מחיקה וכו'),
+ * נוצרת שורה חדשה בגיליון Logs עם פרטי הפעולה וחותמת זמן.
+ * אם גיליון Logs לא קיים — הוא נוצר אוטומטית.
+ *
+ * @category ציבורי
+ * @param {string} actionType — סוג הפעולה שבוצעה (למשל: "CREATE_SHEET", "SEED_ROWS")
+ * @param {string} entityType — סוג הישות עליה בוצעה הפעולה (למשל: "Sheet", "Document")
+ * @param {string} entityId — מזהה הישות (שם הגיליון, מזהה המסמך וכו')
+ * @param {string} status — תוצאת הפעולה: "Success" או "Error"
+ * @param {string} message — הודעה תיאורית קצרה על מה שקרה
+ * @returns {string} מזהה ייחודי של שורת הלוג שנוצרה
+ */
 function logAction(actionType, entityType, entityId, status, message) {
   const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
   let sheet = spreadsheet.getSheetByName("Logs");
@@ -292,10 +491,38 @@ function logAction(actionType, entityType, entityId, status, message) {
   return logId;
 }
 
+/**
+ * רושמת שגיאה ביומן המערכת.
+ *
+ * ▶️ ניתן להרצה ישירה מהסקריפט
+ *
+ * קיצור דרך לרישום שגיאות — קוראת ל-logAction עם סטטוס "Error".
+ * משמשת בכל מקום שבו קורית שגיאה בלתי צפויה ויש לרשום אותה.
+ *
+ * @category ציבורי
+ * @param {string} actionType — סוג הפעולה שגרמה לשגיאה
+ * @param {string} entityType — סוג הישות שנגעה לשגיאה
+ * @param {string} entityId — מזהה הישות הרלוונטית
+ * @param {string} errorMessage — תיאור השגיאה שקרתה
+ * @returns {string} מזהה ייחודי של שורת הלוג שנוצרה
+ */
 function logError(actionType, entityType, entityId, errorMessage) {
   return logAction(actionType, entityType, entityId, "Error", errorMessage);
 }
 
+/**
+ * יוצרת מזהה ייחודי לפריט חדש (פרומפט, לוג וכו').
+ *
+ * 🔒 פונקציה פנימית — לא מיועדת להרצה ישירה
+ *
+ * המזהה בנוי מ: קידומת + חותמת זמן מדויקת + 4 ספרות אקראיות.
+ * לדוגמה: LOG-20240601123045-3821
+ * כך מובטח שכל פריט יקבל מזהה שונה ואחיד.
+ *
+ * @category פנימי
+ * @param {string} prefix — הקידומת שתופיע בתחילת המזהה (למשל: "LOG", "PRM")
+ * @returns {string} מזהה ייחודי בפורמט: prefix-yyyyMMddHHmmss-XXXX
+ */
 function createId_(prefix) {
   const timestamp = Utilities.formatDate(new Date(), PROMPT_LIBRARY_SCHEMA.timezone, "yyyyMMddHHmmss");
   const random = Math.floor(Math.random() * 10000).toString().padStart(4, "0");

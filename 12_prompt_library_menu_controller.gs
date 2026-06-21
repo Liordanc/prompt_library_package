@@ -1,13 +1,35 @@
 /**
- * Prompt Library Menu Controller
- * File number: 12
- * Requires existing Prompt Library services.
+ * @file 12_prompt_library_menu_controller.gs
+ * @category 🖥️ תפריט וממשק משתמש בגיליון
+ *
+ * קובץ זה שולט על התפריט של הספרייה בגוגל שיט ומטפל
+ * בכל הפעולות שהמשתמש יכול להפעיל ממנו.
+ *
+ * פונקציות ציבוריות ראשיות:
+ * - onOpen                    — נקראת אוטומטית בפתיחת הגיליון ויוצרת את התפריט
+ * - createPromptLibraryMenu   — בונה את תפריט Prompt Library עם כל תת-התפריטים
+ * - menuRunFullSetupSequence  — מריצה את כל רצף ההקמה בלחיצה אחת
+ * - menuCreateAgentToken      — יוצרת טוקן סודי חדש לסוכן ומציגה אותו
+ *
+ * דרישות: שירותי Prompt Library קיימים.
  */
 
+/**
+ * נקראת אוטומטית על ידי גוגל שיט בכל פעם שהגיליון נפתח, ויוצרת את תפריט הספרייה.
+ * @category ציבורי
+ * ▶️ ניתן להרצה ישירה מהסקריפט
+ * @returns {void} אינה מחזירה ערך
+ */
 function onOpen() {
   createPromptLibraryMenu();
 }
 
+/**
+ * בונה את תפריט "Prompt Library" בגיליון עם כל תת-התפריטים, הפריטים והפרידות.
+ * @category ציבורי
+ * ▶️ ניתן להרצה ישירה מהסקריפט
+ * @returns {void} אינה מחזירה ערך
+ */
 function createPromptLibraryMenu() {
   SpreadsheetApp.getUi()
     .createMenu("Prompt Library")
@@ -46,6 +68,12 @@ function createPromptLibraryMenu() {
     .addToUi();
 }
 
+/**
+ * פעולת תפריט: יוצרת טוקן סודי חדש לסוכן החיצוני ומציגה אותו למשתמש לשמירה.
+ * @category ציבורי
+ * ▶️ ניתן להרצה ישירה מהסקריפט
+ * @returns {void} אינה מחזירה ערך — מציגה חלון קופץ עם הטוקן
+ */
 function menuCreateAgentToken() {
   runMenuAction_("Create / Reset Agent Token", () => {
     const token = generateAgentToken_();
@@ -65,6 +93,12 @@ function menuCreateAgentToken() {
   });
 }
 
+/**
+ * פעולת תפריט: מציגה האם יש טוקן פעיל שמור בהגדרות הסקריפט.
+ * @category ציבורי
+ * ▶️ ניתן להרצה ישירה מהסקריפט
+ * @returns {void} אינה מחזירה ערך — מציגה חלון קופץ עם סטטוס הטוקן
+ */
 function menuShowAgentTokenStatus() {
   runMenuAction_("Agent Token Status", () => {
     const token = PropertiesService
@@ -86,54 +120,132 @@ function menuShowAgentTokenStatus() {
   });
 }
 
+/**
+ * פעולת תפריט: מריצה התקנה קשיחה של תשתית הספרייה.
+ * @category ציבורי
+ * ▶️ ניתן להרצה ישירה מהסקריפט
+ * @returns {void} אינה מחזירה ערך — מציגה תוצאה בחלון קופץ
+ */
 function menuRunStrictInstallation() {
   runMenuAction_("Run Strict Installation", () => installPromptLibraryInfrastructureStrict());
 }
 
+/**
+ * פעולת תפריט: מריצה בדיקות הקמה כדי לוודא שהמבנה הראשוני נוצר נכון.
+ * @category ציבורי
+ * ▶️ ניתן להרצה ישירה מהסקריפט
+ * @returns {void} אינה מחזירה ערך — מציגה תוצאה בחלון קופץ
+ */
 function menuRunSetupTest() {
   runMenuAction_("Run Setup Test", () => runPromptLibrarySetupTest());
 }
 
+/**
+ * פעולת תפריט: מריצה בדיקת תהליך מלאה מקצה לקצה.
+ * @category ציבורי
+ * ▶️ ניתן להרצה ישירה מהסקריפט
+ * @returns {void} אינה מחזירה ערך — מציגה תוצאה בחלון קופץ
+ */
 function menuRunFirstStableWorkflowTest() {
   runMenuAction_("Run First Stable Workflow Test", () => runFirstStableWorkflowTest());
 }
 
+/**
+ * פעולת תפריט: בודקת שהמערכת מוכנה לשימוש שוטף ולא רק לניסיון.
+ * @category ציבורי
+ * ▶️ ניתן להרצה ישירה מהסקריפט
+ * @returns {void} אינה מחזירה ערך — מציגה תוצאה בחלון קופץ
+ */
 function menuRunProductionReadinessCheck() {
   runMenuAction_("Run Production Readiness Check", () => runProductionReadinessCheck());
 }
 
+/**
+ * פעולת תפריט: מריצה בדיקת תקינות מלאה של כל מבנה המערכת.
+ * @category ציבורי
+ * ▶️ ניתן להרצה ישירה מהסקריפט
+ * @returns {void} אינה מחזירה ערך — מציגה תוצאה בחלון קופץ
+ */
 function menuRunFullIntegrityCheck() {
   runMenuAction_("Run Full Integrity Check", () => runFullIntegrityCheck());
 }
 
+/**
+ * פעולת תפריט: בודקת שכל הגיליונות הנדרשים קיימים בקובץ.
+ * @category ציבורי
+ * ▶️ ניתן להרצה ישירה מהסקריפט
+ * @returns {void} אינה מחזירה ערך — מציגה תוצאה בחלון קופץ
+ */
 function menuValidateRequiredSheets() {
   runMenuAction_("Validate Required Sheets", () => validateRequiredSheets());
 }
 
+/**
+ * פעולת תפריט: בודקת שמבנה העמודות בכל הגיליונות תואם את הסכמה המוגדרת.
+ * @category ציבורי
+ * ▶️ ניתן להרצה ישירה מהסקריפט
+ * @returns {void} אינה מחזירה ערך — מציגה תוצאה בחלון קופץ
+ */
 function menuValidateAllSchemas() {
   runMenuAction_("Validate All Schemas", () => validateAllSheetSchemas());
 }
 
+/**
+ * פעולת תפריט: סורקת את הגיליון ומחזירה תמונת מצב של מה שקיים בו.
+ * @category ציבורי
+ * ▶️ ניתן להרצה ישירה מהסקריפט
+ * @returns {void} אינה מחזירה ערך — מציגה תוצאה בחלון קופץ
+ */
 function menuInspectWorkbook() {
   runMenuAction_("Inspect Workbook", () => inspectExistingWorkbook());
 }
 
+/**
+ * פעולת תפריט: בונה דוח מיגרציה שמסכם מה קיים בגיליון לפני שינוי.
+ * @category ציבורי
+ * ▶️ ניתן להרצה ישירה מהסקריפט
+ * @returns {void} אינה מחזירה ערך — מציגה תוצאה בחלון קופץ
+ */
 function menuBuildMigrationReport() {
   runMenuAction_("Build Migration Report", () => buildMigrationReport());
 }
 
+/**
+ * פעולת תפריט: מריצה בדיקת חיים מקומית לשער הסוכן החיצוני.
+ * @category ציבורי
+ * ▶️ ניתן להרצה ישירה מהסקריפט
+ * @returns {void} אינה מחזירה ערך — מציגה תוצאה בחלון קופץ
+ */
 function menuRunGatewayHealthCheckLocal() {
   runMenuAction_("Gateway Health Check Local", () => agentHealthCheck_());
 }
 
+/**
+ * פעולת תפריט: יוצרת פרומפט לבדיקה כדי לוודא שהמערכת עובדת.
+ * @category ציבורי
+ * ▶️ ניתן להרצה ישירה מהסקריפט
+ * @returns {void} אינה מחזירה ערך — מציגה תוצאה בחלון קופץ
+ */
 function menuCreateTestPrompt() {
   runMenuAction_("Create Test Prompt", () => runPromptLibraryCreatePromptTest());
 }
 
+/**
+ * פעולת תפריט: מריצה את כל רצף ההקמה של הספרייה בלחיצה אחת.
+ * @category ציבורי
+ * ▶️ ניתן להרצה ישירה מהסקריפט
+ * @returns {void} אינה מחזירה ערך — מציגה תוצאה בחלון קופץ
+ */
 function menuRunFullSetupSequence() {
   runMenuAction_("Run Full Setup Sequence", () => runFullSetupSequence_());
 }
 
+/**
+ * מריצה את כל שלבי ההקמה בסדר קבוע, ועוצרת מיד אם אחד מהשלבים נכשל.
+ * 🔒 פונקציה פנימית — לא מיועדת להרצה ישירה
+ * @category פנימי
+ * @returns {Object} אובייקט עם ok, stopped, ורשימת השלבים שבוצעו
+ */
 function runFullSetupSequence_() {
   const steps = [
     {
@@ -215,6 +327,12 @@ function runFullSetupSequence_() {
   };
 }
 
+/**
+ * בודקת שיש טוקן שמור בהגדרות הסקריפט, ויוצרת אחד חדש אם חסר.
+ * 🔒 פונקציה פנימית — לא מיועדת להרצה ישירה
+ * @category פנימי
+ * @returns {Object} אובייקט עם ok, created (האם נוצר חדש), וטקסט הסבר
+ */
 function ensureAgentTokenExists_() {
   const existingToken = PropertiesService
     .getScriptProperties()
@@ -248,6 +366,12 @@ function ensureAgentTokenExists_() {
   };
 }
 
+/**
+ * יוצרת טוקן סודי ייחודי חדש בפורמט plt_[תאריך]_[uuid]_[מספר אקראי].
+ * 🔒 פונקציה פנימית — לא מיועדת להרצה ישירה
+ * @category פנימי
+ * @returns {string} הטוקן הסודי שנוצר
+ */
 function generateAgentToken_() {
   const uuid = Utilities.getUuid().replace(/-/g, "");
   const timestamp = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyyMMddHHmmss");
@@ -256,6 +380,14 @@ function generateAgentToken_() {
   return `plt_${timestamp}_${uuid}_${random}`;
 }
 
+/**
+ * מריצה פעולת תפריט עם תיעוד ביומן ומציגה את התוצאה למשתמש בחלון קופץ.
+ * 🔒 פונקציה פנימית — לא מיועדת להרצה ישירה
+ * @category פנימי
+ * @param {string} title - שם הפעולה לתצוגה בכותרת החלון ובלוג
+ * @param {Function} fn - הפונקציה שיש להריץ
+ * @returns {*} תוצאת הפונקציה שרצה
+ */
 function runMenuAction_(title, fn) {
   const ui = SpreadsheetApp.getUi();
   const startedAt = new Date();
@@ -307,6 +439,13 @@ function runMenuAction_(title, fn) {
   }
 }
 
+/**
+ * בודקת שתוצאת שלב בהקמה תקינה, וזורקת שגיאה אם ok=false.
+ * 🔒 פונקציה פנימית — לא מיועדת להרצה ישירה
+ * @category פנימי
+ * @param {Object} result - תוצאת השלב שיש לבדוק
+ * @returns {Object} התוצאה המקורית אם היא תקינה
+ */
 function assertMenuStepOk_(result) {
   if (result && result.ok === false) {
     throw new Error(JSON.stringify(result));
@@ -315,6 +454,13 @@ function assertMenuStepOk_(result) {
   return result;
 }
 
+/**
+ * מצמצמת תוצאה גדולה לנתונים העיקריים בלבד, להצגה קומפקטית בחלון הקופץ.
+ * 🔒 פונקציה פנימית — לא מיועדת להרצה ישירה
+ * @category פנימי
+ * @param {*} result - התוצאה המקורית שיש לצמצם
+ * @returns {Object|null} גרסה מקוצרת של התוצאה, או null אם לא קיימת תוצאה
+ */
 function compactMenuResult_(result) {
   if (!result) {
     return null;
@@ -346,6 +492,14 @@ function compactMenuResult_(result) {
   };
 }
 
+/**
+ * מציגה הודעה ארוכה למשתמש בחלון קופץ עם כפתור אישור.
+ * 🔒 פונקציה פנימית — לא מיועדת להרצה ישירה
+ * @category פנימי
+ * @param {string} title - כותרת החלון הקופץ
+ * @param {string} message - תוכן ההודעה שתוצג
+ * @returns {void} אינה מחזירה ערך
+ */
 function showLongMessage_(title, message) {
   SpreadsheetApp.getUi().alert(
     title,

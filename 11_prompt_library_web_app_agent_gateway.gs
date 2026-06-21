@@ -1,7 +1,17 @@
 /**
- * Prompt Library Web App Agent Gateway
- * Requires existing Prompt Library services.
- * Public Web App entry points: doPost(e), doGet(e)
+ * @file 11_prompt_library_web_app_agent_gateway.gs
+ * @category 🌐 שער API לסוכן חיצוני
+ *
+ * קובץ זה הוא "הדלת הכניסה" לסוכן החיצוני (כמו Antigravity) —
+ * מאפשר לסוכן לבצע פעולות בספרייה דרך כתובת Web App,
+ * בתנאי שהוא מציג טוקן סודי.
+ *
+ * פונקציות ציבוריות ראשיות:
+ * - doGet            — מקבלת בקשות GET מהסוכן (בעיקר בדיקת חיים)
+ * - doPost           — מקבלת בקשות POST ומבצעת פעולות בספרייה
+ * - setAgentGatewayToken — שומרת את הטוקן הסודי בהגדרות הסקריפט
+ *
+ * דרישות: שירותי Prompt Library קיימים.
  */
 
 const AGENT_GATEWAY_CONFIG = Object.freeze({
@@ -28,6 +38,14 @@ const AGENT_GATEWAY_CONFIG = Object.freeze({
   ]
 });
 
+/**
+ * מקבלת בקשות GET שמגיעות מהסוכן החיצוני דרך הדפדפן או כלי API.
+ * בדרך כלל משמשת לבדיקת חיים של השירות — לוודא שהוא פועל.
+ * @category ציבורי
+ * 🌐 נקודת כניסה של Web App — Google מפעיל אותה אוטומטית
+ * @param {Object} e - אובייקט האירוע של Google Apps Script עם פרמטרי הבקשה
+ * @returns {TextOutput} תשובת JSON עם סטטוס הפעולה
+ */
 function doGet(e) {
   const startedAt = new Date();
 
@@ -61,6 +79,14 @@ function doGet(e) {
   }
 }
 
+/**
+ * מקבלת בקשות POST מהסוכן החיצוני ומבצעת את הפעולה המבוקשת בספרייה.
+ * זוהי הדרך העיקרית שבה הסוכן מתקשר עם הספרייה.
+ * @category ציבורי
+ * 🌐 נקודת כניסה של Web App — Google מפעיל אותה אוטומטית
+ * @param {Object} e - אובייקט האירוע של Google Apps Script עם גוף הבקשה
+ * @returns {TextOutput} תשובת JSON עם תוצאת הפעולה
+ */
 function doPost(e) {
   const startedAt = new Date();
 
@@ -88,6 +114,14 @@ function doPost(e) {
   }
 }
 
+/**
+ * מנתבת את בקשת הסוכן לפונקציה המתאימה לפי שם הפעולה המבוקשת.
+ * 🔒 פונקציה פנימית — לא מיועדת להרצה ישירה
+ * @category פנימי
+ * @param {string} action - שם הפעולה שהסוכן מבקש לבצע
+ * @param {Object} payload - גוף הבקשה עם הפרמטרים הנוספים
+ * @returns {*} תוצאת הפעולה שהופעלה
+ */
 function dispatchAgentAction_(action, payload) {
   if (!AGENT_GATEWAY_CONFIG.allowedActions.includes(action)) {
     throw new Error(`Action is not allowed: ${action}`);
@@ -129,6 +163,12 @@ function dispatchAgentAction_(action, payload) {
   return result;
 }
 
+/**
+ * מחזירה אישור שהשירות פעיל ותקין, יחד עם פרטי הגיליון הפעיל.
+ * 🔒 פונקציה פנימית — לא מיועדת להרצה ישירה
+ * @category פנימי
+ * @returns {Object} אובייקט עם סטטוס "ok", שם השירות, מזהה הגיליון וזמן הבדיקה
+ */
 function agentHealthCheck_() {
   return {
     status: "ok",
@@ -139,6 +179,13 @@ function agentHealthCheck_() {
   };
 }
 
+/**
+ * בודקת שהסוכן מציג טוקן תקין בבקשה, ואחרת זורקת שגיאה שדוחה אותו.
+ * 🔒 פונקציה פנימית — לא מיועדת להרצה ישירה
+ * @category פנימי
+ * @param {Object} e - אובייקט האירוע של Google Apps Script עם הטוקן
+ * @returns {void} אינה מחזירה ערך — זורקת שגיאה אם הטוקן לא תקין
+ */
 function assertAgentAuthorized_(e) {
   const expectedToken = PropertiesService
     .getScriptProperties()
@@ -155,6 +202,13 @@ function assertAgentAuthorized_(e) {
   }
 }
 
+/**
+ * שולפת את הטוקן הסודי מהבקשה הנכנסת — מגוף הבקשה או מהפרמטרים.
+ * 🔒 פונקציה פנימית — לא מיועדת להרצה ישירה
+ * @category פנימי
+ * @param {Object} e - אובייקט האירוע של Google Apps Script
+ * @returns {string} הטוקן שנשלח בבקשה, או מחרוזת ריקה אם לא נמצא
+ */
 function getProvidedToken_(e) {
   const payload = getRequestPayload_(e);
 
@@ -169,6 +223,13 @@ function getProvidedToken_(e) {
   return "";
 }
 
+/**
+ * שולפת את שם הפעולה המבוקשת מהבקשה הנכנסת — מהפרמטרים או מגוף הבקשה.
+ * 🔒 פונקציה פנימית — לא מיועדת להרצה ישירה
+ * @category פנימי
+ * @param {Object} e - אובייקט האירוע של Google Apps Script
+ * @returns {string} שם הפעולה, או מחרוזת ריקה אם לא נמצאה
+ */
 function getRequestAction_(e) {
   if (e && e.parameter && e.parameter.action) {
     return String(e.parameter.action).trim();
@@ -183,6 +244,13 @@ function getRequestAction_(e) {
   return "";
 }
 
+/**
+ * קוראת ומפרסרת את גוף הבקשה הנכנסת מ-JSON לאובייקט JavaScript.
+ * 🔒 פונקציה פנימית — לא מיועדת להרצה ישירה
+ * @category פנימי
+ * @param {Object} e - אובייקט האירוע של Google Apps Script עם גוף הבקשה
+ * @returns {Object} האובייקט שפורסר מה-JSON, או אובייקט ריק אם אין גוף
+ */
 function getRequestPayload_(e) {
   if (!e || !e.postData || !e.postData.contents) {
     return {};
@@ -201,6 +269,14 @@ function getRequestPayload_(e) {
   }
 }
 
+/**
+ * בודקת שערך חובה קיים בבקשה, וזורקת שגיאה ברורה אם הוא חסר.
+ * 🔒 פונקציה פנימית — לא מיועדת להרצה ישירה
+ * @category פנימי
+ * @param {*} value - הערך שיש לבדוק
+ * @param {string} fieldName - שם השדה (לשימוש בהודעת השגיאה)
+ * @returns {*} הערך המקורי אם הוא תקין
+ */
 function requiredValue_(value, fieldName) {
   if (value === null || value === undefined || String(value).trim() === "") {
     throw new Error(`Missing required field: ${fieldName}`);
@@ -209,12 +285,28 @@ function requiredValue_(value, fieldName) {
   return value;
 }
 
+/**
+ * יוצרת תשובת JSON מסודרת לסוכן מהנתונים שהתקבלו.
+ * 🔒 פונקציה פנימית — לא מיועדת להרצה ישירה
+ * @category פנימי
+ * @param {Object} data - הנתונים שיש להחזיר לסוכן
+ * @returns {TextOutput} אובייקט תגובת HTTP עם תוכן JSON
+ */
 function jsonResponse_(data) {
   return ContentService
     .createTextOutput(JSON.stringify(data, null, 2))
     .setMimeType(AGENT_GATEWAY_CONFIG.defaultResponseMimeType);
 }
 
+/**
+ * יוצרת תשובת שגיאה מסודרת לסוכן ורושמת את הבעיה ביומן הפעולות.
+ * 🔒 פונקציה פנימית — לא מיועדת להרצה ישירה
+ * @category פנימי
+ * @param {string} code - קוד השגיאה לזיהוי סוג הכשל
+ * @param {Error} error - אובייקט השגיאה שנזרקה
+ * @param {Date} startedAt - הזמן שבו התחילה הבקשה
+ * @returns {TextOutput} אובייקט תגובת HTTP עם פרטי השגיאה ב-JSON
+ */
 function jsonErrorResponse_(code, error, startedAt) {
   console.error(`[AgentGateway] ${code}: ${error.message}`);
   Logger.log(`[AgentGateway] ${code}: ${error.message}`);
@@ -234,6 +326,14 @@ function jsonErrorResponse_(code, error, startedAt) {
   });
 }
 
+/**
+ * שומרת את הטוקן הסודי בהגדרות הסקריפט — נדרשת פעם אחת בהגדרה הראשונית.
+ * הטוקן חייב להכיל לפחות 20 תווים כדי להבטיח אבטחה מספקת.
+ * @category ציבורי
+ * ▶️ ניתן להרצה ישירה מהסקריפט
+ * @param {string} token - הטוקן הסודי שיישמר עבור זיהוי הסוכן החיצוני
+ * @returns {Object} אובייקט עם ok=true ושם המפתח שנשמר
+ */
 function setAgentGatewayToken(token) {
   if (!token || String(token).trim().length < 20) {
     throw new Error("Token must contain at least 20 characters");

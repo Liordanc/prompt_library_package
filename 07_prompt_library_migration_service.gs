@@ -1,8 +1,35 @@
 /**
- * Prompt Library Migration Service
+ * @file שירות מיגרציה לספריית הפרומפטים
+ * @description קובץ זה עוזר לעבור מגיליון ישן למבנה החדש — סורק מה קיים,
+ * מעביר נתונים ישנים, ומסדר את מה שצריך להישמר.
+ *
+ * @category 🔄 מיגרציה ושדרוג מגיליון קיים
+ *
+ * פונקציות ציבוריות ראשיות:
+ * - inspectExistingWorkbook          — סורקת את כל הגיליונות הקיימים
+ * - runSafeMigration                 — מריצה את כל שלבי המעבר עם גיבוי
+ * - migratePromptsSchema             — מוסיפה עמודות חסרות לגיליון הפרומפטים
+ * - migratePinnedToFavorite          — מעתיקה נתוני "נעוץ" לשדה המועדפים
+ * - migrateContentToPreview          — מעתיקה תוכן ישן לשדה התצוגה הקצרה
+ * - createSubcategoriesSheet         — יוצרת את גיליון תתי-הקטגוריות
+ * - migrateExistingCategories        — מוסיפה קטגוריות בסיס חסרות
+ * - migrateExistingTags              — מתקנת תגיות ישנות ללא מזהה/תאריכים
+ * - markDeprecatedSheetsForReview    — מסמנת גיליונות ישנים לבדיקה ידנית
+ * - hideDeprecatedSheetsAfterReview  — מסתירה גיליונות ישנים שאושרו לגניזה
+ * - buildMigrationReport             — בונה דוח מלא על מצב הגיליון
+ *
  * Requires: PROMPT_LIBRARY_SCHEMA
  */
 
+/**
+ * סורקת את כל הגיליונות הקיימים בקובץ Google Sheets ומחזירה מידע מפורט
+ * על כל גיליון — שם, מספר שורות, עמודות, האם מוסתר ועוד.
+ *
+ * ▶️ ניתן להרצה ישירה מהסקריפט
+ *
+ * @category ציבורי
+ * @returns {{spreadsheetId: string, spreadsheetName: string, spreadsheetUrl: string, inspectedAt: string, sheets: object[]}} מידע כולל על הקובץ וכל הגיליונות שבו
+ */
 function inspectExistingWorkbook() {
   const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
   const sheets = spreadsheet.getSheets().map(sheet => ({
@@ -28,6 +55,15 @@ function inspectExistingWorkbook() {
   return result;
 }
 
+/**
+ * מריצה את כל שלבי המעבר מגיליון ישן למבנה החדש, עם גיבוי מלא לפני הכל.
+ * כוללת: הוספת עמודות, העברת נתונים, יצירת גיליונות חסרים וסימון גיליונות ישנים.
+ *
+ * ▶️ ניתן להרצה ישירה מהסקריפט
+ *
+ * @category ציבורי
+ * @returns {{backup: object, inspection: object, schema: object, pinned: object, content: object, subcategories: object, categories: object, tags: object, deprecatedSheets: object}} תוצאות כל שלב במיגרציה
+ */
 function runSafeMigration() {
   const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
   const backup = backupSpreadsheetStructure_(spreadsheet);
@@ -50,6 +86,15 @@ function runSafeMigration() {
   return results;
 }
 
+/**
+ * מוסיפה עמודות חסרות לגיליון הפרומפטים הקיים בהתאם לסכמה החדשה.
+ * שומרת על הנתונים הקיימים ומוסיפה רק מה שחסר.
+ *
+ * ▶️ ניתן להרצה ישירה מהסקריפט
+ *
+ * @category ציבורי
+ * @returns {{sheetName: string, beforeHeaders: string[], afterHeaders: string[], addedColumns: string[]}} שמות העמודות לפני ואחרי, ורשימת העמודות שנוספו
+ */
 function migratePromptsSchema() {
   const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
   const sheet = spreadsheet.getSheetByName("Prompts");
@@ -74,6 +119,15 @@ function migratePromptsSchema() {
   };
 }
 
+/**
+ * מעתיקה את נתוני עמודת "Is_Pinned" הישנה לעמודת "Is_Favorite" החדשה,
+ * רק עבור שורות שבהן שדה המועדפים עדיין ריק.
+ *
+ * ▶️ ניתן להרצה ישירה מהסקריפט
+ *
+ * @category ציבורי
+ * @returns {{ok: boolean, updatedRows: number, skipped?: boolean, reason?: string}} האם הפעולה הצליחה, כמה שורות עודכנו, ואם דולגה — מדוע
+ */
 function migratePinnedToFavorite() {
   const sheet = getRequiredSheet_("Prompts");
   const headers = getHeaderRow_(sheet);
@@ -123,6 +177,15 @@ function migratePinnedToFavorite() {
   };
 }
 
+/**
+ * מעתיקה את תוכן הפרומפט מעמודת "Content" הישנה לעמודת "Preview_Text" החדשה,
+ * רק עבור שורות שבהן שדה התצוגה הקצרה עדיין ריק.
+ *
+ * ▶️ ניתן להרצה ישירה מהסקריפט
+ *
+ * @category ציבורי
+ * @returns {{ok: boolean, updatedRows: number, skipped?: boolean, reason?: string}} האם הפעולה הצליחה, כמה שורות עודכנו, ואם דולגה — מדוע
+ */
 function migrateContentToPreview() {
   const sheet = getRequiredSheet_("Prompts");
   const headers = getHeaderRow_(sheet);
@@ -176,6 +239,15 @@ function migrateContentToPreview() {
   };
 }
 
+/**
+ * יוצרת את גיליון תתי-הקטגוריות ("Subcategories") אם הוא עדיין לא קיים בקובץ,
+ * מוסיפה את העמודות הנדרשות ומאכלסת שורות ראשוניות לפי הסכמה.
+ *
+ * ▶️ ניתן להרצה ישירה מהסקריפט
+ *
+ * @category ציבורי
+ * @returns {{ok: boolean, sheetName: string}} אישור שהגיליון קיים ומוכן
+ */
 function createSubcategoriesSheet() {
   const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
   const existing = spreadsheet.getSheetByName("Subcategories");
@@ -195,6 +267,15 @@ function createSubcategoriesSheet() {
   };
 }
 
+/**
+ * בודקת אילו קטגוריות בסיס חסרות מגיליון Categories ומוסיפה אותן מהסכמה.
+ * לא משנה קטגוריות שכבר קיימות — מוסיפה רק את החסרות.
+ *
+ * ▶️ ניתן להרצה ישירה מהסקריפט
+ *
+ * @category ציבורי
+ * @returns {{ok: boolean, existingNames: string[], inserted: string[]}} שמות הקטגוריות שהיו קיימות, ושמות הקטגוריות שנוספו
+ */
 function migrateExistingCategories() {
   const sheet = getRequiredSheet_("Categories");
   const headers = getHeaderRow_(sheet);
@@ -227,6 +308,15 @@ function migrateExistingCategories() {
   };
 }
 
+/**
+ * עוברת על כל התגיות בגיליון Tags ומתקנת שורות שחסרות להן מזהה (Tag_ID)
+ * או תאריכי יצירה ועדכון — ממלאת ערכים חסרים באופן אוטומטי.
+ *
+ * ▶️ ניתן להרצה ישירה מהסקריפט
+ *
+ * @category ציבורי
+ * @returns {{ok: boolean, repairedRows: number[]}} מספרי השורות שתוקנו בגיליון
+ */
 function migrateExistingTags() {
   const sheet = getRequiredSheet_("Tags");
   const headers = getHeaderRow_(sheet);
@@ -268,6 +358,15 @@ function migrateExistingTags() {
   };
 }
 
+/**
+ * מסמנת גיליונות ישנים שזוהו כמיושנים ודורשים בדיקה ידנית לפני מחיקה.
+ * מחזירה אילו גיליונות נמצאו בקובץ ואילו כבר אינם קיימים.
+ *
+ * ▶️ ניתן להרצה ישירה מהסקריפט
+ *
+ * @category ציבורי
+ * @returns {{ok: boolean, found: {sheetName: string, isHidden: boolean, lastRow: number, lastColumn: number}[], missing: string[]}} גיליונות שנמצאו לסקירה וגיליונות שלא קיימים
+ */
 function markDeprecatedSheetsForReview() {
   const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
   const deprecated = PROMPT_LIBRARY_SCHEMA.migration.deprecatedSheetsDetected || [];
@@ -299,6 +398,16 @@ function markDeprecatedSheetsForReview() {
   };
 }
 
+/**
+ * מסתירה גיליונות ישנים שכבר עברו בדיקה ידנית ואושרו לגניזה.
+ * מקבלת רשימת שמות גיליונות ומסתירה כל אחד שנמצא בקובץ.
+ *
+ * ▶️ ניתן להרצה ישירה מהסקריפט
+ *
+ * @category ציבורי
+ * @param {string[]} sheetNames — רשימת שמות הגיליונות להסתרה (חייבת להיות מערך לא ריק)
+ * @returns {{ok: boolean, hidden: string[]}} רשימת שמות הגיליונות שהוסתרו בפועל
+ */
 function hideDeprecatedSheetsAfterReview(sheetNames) {
   if (!Array.isArray(sheetNames) || sheetNames.length === 0) {
     throw new Error("sheetNames must be a non-empty array");
@@ -326,6 +435,15 @@ function hideDeprecatedSheetsAfterReview(sheetNames) {
   };
 }
 
+/**
+ * בונה דוח מלא על מצב הגיליון לקראת מיגרציה — כולל סקירת גיליונות קיימים
+ * ובדיקות תקינות מלאות לסכמות, קטגוריות, סטטוסים וסוגי פרומפטים.
+ *
+ * ▶️ ניתן להרצה ישירה מהסקריפט
+ *
+ * @category ציבורי
+ * @returns {{generatedAt: string, inspection: object, schemaValidation: object, categoryValidation: object, subcategoryValidation: object, statusValidation: object, promptTypeValidation: object, toolTargetValidation: object}} דוח מקיף הכולל את כל תוצאות הבדיקה
+ */
 function buildMigrationReport() {
   const inspection = inspectExistingWorkbook();
   const schemaValidation = validateAllSheetSchemas();
