@@ -1,0 +1,18 @@
+{
+  "name": "prompt-library-gas",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Code quality tooling for Prompt Library Google Apps Script project",
+  "type": "module",
+  "scripts": {
+    "lint": "eslint \"**/*.{js,gs}\"",
+    "lint:fix": "eslint \"**/*.{js,gs}\" --fix",
+    "audit": "node scripts/audit-code.js",
+    "check": "npm run lint && npm run audit"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.0",
+    "eslint": "^9.39.0",
+    "globals": "^15.15.0"
+  }
+}

@@ -1,0 +1,8 @@
+gas_code_quality_pack*
+github_quality_pack
+prompt_library_project_organized
+node_modules
+agent-client.js
+prompt_library_menu_controller.js
+.env
+env.example
